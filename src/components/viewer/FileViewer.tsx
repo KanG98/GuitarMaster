@@ -19,7 +19,7 @@ function FileContent({ file }: { file: FileRecord }) {
       <img
         src={file.url}
         alt={file.name}
-        className="max-w-full max-h-full object-contain select-none"
+        className="w-full h-full object-contain select-none"
         draggable={false}
       />
     );
@@ -116,7 +116,7 @@ export function FileViewer({ files, currentIndex, onNavigate, onClose }: FileVie
         )}
 
         {/* Dual page content */}
-        <div className="w-full h-full flex items-center justify-center gap-4 p-4">
+        <div className="w-full h-full flex items-center justify-center gap-1 px-10 py-2">
           <div className="flex-1 h-full flex items-center justify-center">
             <FileContent file={leftFile} />
           </div>
