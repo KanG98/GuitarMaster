@@ -28,33 +28,34 @@ describe("PracticeTimer", () => {
 
   test("starts from initialSeconds", () => {
     render(<PracticeTimer {...defaultProps} initialSeconds={125} />);
-    expect(screen.getByText("02:05")).toBeInTheDocument();
+    // 125s = 0h 2m → 00:02
+    expect(screen.getByText("00:02")).toBeInTheDocument();
   });
 
-  test("shows HH:MM:SS format when >= 1 hour", () => {
+  test("shows HH:MM format for hours", () => {
     render(<PracticeTimer {...defaultProps} initialSeconds={3661} />);
-    // 1h 1m 1s
-    expect(screen.getByText("01:01:01")).toBeInTheDocument();
+    // 3661s = 1h 1m → 01:01
+    expect(screen.getByText("01:01")).toBeInTheDocument();
   });
 
   test("auto-starts and increments every second", () => {
     render(<PracticeTimer {...defaultProps} />);
 
     act(() => {
-      jest.advanceTimersByTime(3000);
+      jest.advanceTimersByTime(60000); // 60 seconds
     });
 
-    expect(screen.getByText("00:03")).toBeInTheDocument();
+    expect(screen.getByText("00:01")).toBeInTheDocument();
   });
 
   test("formats minutes correctly", () => {
     render(<PracticeTimer {...defaultProps} />);
 
     act(() => {
-      jest.advanceTimersByTime(65000); // 1 min 5 sec
+      jest.advanceTimersByTime(125000); // 2 min 5 sec → 00:02
     });
 
-    expect(screen.getByText("01:05")).toBeInTheDocument();
+    expect(screen.getByText("00:02")).toBeInTheDocument();
   });
 
   test("pause button stops the timer", async () => {
@@ -62,20 +63,20 @@ describe("PracticeTimer", () => {
     render(<PracticeTimer {...defaultProps} />);
 
     act(() => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(120000); // 2 minutes
     });
-    expect(screen.getByText("00:05")).toBeInTheDocument();
+    expect(screen.getByText("00:02")).toBeInTheDocument();
 
     // Click pause
     const pauseButton = screen.getByRole("button");
     await user.click(pauseButton);
 
     act(() => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(60000); // 1 more minute while paused
     });
 
-    // Should still be 00:05 after pause
-    expect(screen.getByText("00:05")).toBeInTheDocument();
+    // Should still be 00:02 after pause
+    expect(screen.getByText("00:02")).toBeInTheDocument();
   });
 
   test("resume after pause continues counting", async () => {
@@ -83,7 +84,7 @@ describe("PracticeTimer", () => {
     render(<PracticeTimer {...defaultProps} />);
 
     act(() => {
-      jest.advanceTimersByTime(3000);
+      jest.advanceTimersByTime(60000); // 1 minute
     });
 
     // Pause
@@ -93,10 +94,10 @@ describe("PracticeTimer", () => {
     await user.click(screen.getByRole("button"));
 
     act(() => {
-      jest.advanceTimersByTime(2000);
+      jest.advanceTimersByTime(60000); // 1 more minute
     });
 
-    expect(screen.getByText("00:05")).toBeInTheDocument();
+    expect(screen.getByText("00:02")).toBeInTheDocument();
   });
 
   test("saves delta to Firestore on unmount", () => {

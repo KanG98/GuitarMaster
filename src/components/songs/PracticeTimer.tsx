@@ -82,11 +82,7 @@ export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSeco
 
   const hours = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  const display =
-    hours > 0
-      ? `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-      : `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  const display = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
