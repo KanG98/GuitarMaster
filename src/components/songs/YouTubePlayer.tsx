@@ -18,6 +18,7 @@ function formatTime(seconds: number): string {
 
 const SLOW_SPEEDS = [0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9];
 const FAST_SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+const SKIP_AMOUNTS = [3, 5, 10, 15, 30];
 
 let apiLoadPromise: Promise<void> | null = null;
 
@@ -55,6 +56,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
   const [loopA, setLoopA] = useState<number | null>(null);
   const [loopB, setLoopB] = useState<number | null>(null);
   const [isLooping, setIsLooping] = useState(false);
+  const [skipAmount, setSkipAmount] = useState(5);
 
   // Initialize player
   useEffect(() => {
@@ -192,20 +194,38 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
                 variant="ghost"
                 size="sm"
                 className="h-7 px-2"
-                onClick={() => skip(-5)}
-                title="Skip back 5s"
+                onClick={() => skip(-skipAmount)}
+                title={`Skip back ${skipAmount}s`}
+                data-testid="skip-back"
               >
                 <SkipBack className="h-3 w-3 mr-1" />
-                5s
+                {skipAmount}s
               </Button>
+              <div className="flex items-center gap-0.5">
+                {SKIP_AMOUNTS.map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setSkipAmount(amt)}
+                    className={`h-5 px-1 text-[10px] rounded transition-colors ${
+                      skipAmount === amt
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid={`skip-amt-${amt}`}
+                  >
+                    {amt}
+                  </button>
+                ))}
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 px-2"
-                onClick={() => skip(5)}
-                title="Skip forward 5s"
+                onClick={() => skip(skipAmount)}
+                title={`Skip forward ${skipAmount}s`}
+                data-testid="skip-forward"
               >
-                5s
+                {skipAmount}s
                 <SkipForward className="h-3 w-3 ml-1" />
               </Button>
             </div>
