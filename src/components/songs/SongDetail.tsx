@@ -7,6 +7,7 @@ import { UploadZone } from "@/components/upload/UploadZone";
 import { FileGallery } from "@/components/viewer/FileGallery";
 import { FileViewer } from "@/components/viewer/FileViewer";
 import { PracticeTimer } from "./PracticeTimer";
+import { YouTubeSection } from "./YouTubeSection";
 import {
   SongRecord,
   FileRecord,
@@ -15,7 +16,9 @@ import {
   deleteFile,
   updateFileOrder,
   updatePracticeTime,
+  updateSongVideo,
 } from "@/lib/fileService";
+import { searchYouTube, YouTubeSearchResult } from "@/lib/youtubeService";
 
 interface SongDetailProps {
   song: SongRecord;
@@ -29,6 +32,9 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewIndex, setViewIndex] = useState<number | null>(null);
+  const [videoId, setVideoId] = useState<string | null>(song.youtubeVideoId);
+  const [isSearchingYouTube, setIsSearchingYouTube] = useState(false);
+  const [youtubeResults, setYoutubeResults] = useState<YouTubeSearchResult[]>([]);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
 
   const handleBack = async () => {
@@ -79,6 +85,30 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
     await updateFileOrder(song.id, reordered.map((f) => f.id));
   };
 
+  const handleYouTubeSearch = async (query: string) => {
+    setIsSearchingYouTube(true);
+    try {
+      const results = await searchYouTube(query);
+      setYoutubeResults(results);
+    } catch {
+      // Search failure is non-critical
+    } finally {
+      setIsSearchingYouTube(false);
+    }
+  };
+
+  const handleSelectVideo = async (newVideoId: string) => {
+    setVideoId(newVideoId);
+    setYoutubeResults([]);
+    await updateSongVideo(song.id, newVideoId);
+  };
+
+  const handleRemoveVideo = async () => {
+    setVideoId(null);
+    setYoutubeResults([]);
+    await updateSongVideo(song.id, null);
+  };
+
   if (viewIndex !== null) {
     return (
       <FileViewer
@@ -121,6 +151,17 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           </Button>
         </div>
       </div>
+
+      <YouTubeSection
+        videoId={videoId}
+        songName={song.name}
+        artist={song.artist}
+        isSearching={isSearchingYouTube}
+        searchResults={youtubeResults}
+        onSearch={handleYouTubeSearch}
+        onSelectVideo={handleSelectVideo}
+        onRemoveVideo={handleRemoveVideo}
+      />
 
       <UploadZone
         onFileSelected={handleUpload}

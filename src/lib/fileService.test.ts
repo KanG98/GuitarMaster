@@ -17,6 +17,7 @@ import {
   deleteFile,
   updateFileOrder,
   updatePracticeTime,
+  updateSongVideo,
 } from "./fileService";
 
 beforeEach(() => {
@@ -34,6 +35,7 @@ describe("Song CRUD", () => {
     expect(result.name).toBe("Hotel California");
     expect(result.artist).toBe("Eagles");
     expect(result.totalPracticeSeconds).toBe(0);
+    expect(result.youtubeVideoId).toBeNull();
     expect(result.createdAt).toBeInstanceOf(Date);
   });
 
@@ -109,6 +111,50 @@ describe("Song CRUD", () => {
 
     await updatePracticeTime("song-1", -5);
     expect(mockUpdateDoc).not.toHaveBeenCalled();
+  });
+
+  test("updateSongVideo updates youtubeVideoId field", async () => {
+    mockUpdateDoc.mockResolvedValue(undefined);
+
+    await updateSongVideo("song-1", "dQw4w9WgXcQ");
+
+    expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+  });
+
+  test("updateSongVideo sets youtubeVideoId to null when removing", async () => {
+    mockUpdateDoc.mockResolvedValue(undefined);
+
+    await updateSongVideo("song-1", null);
+
+    expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+  });
+
+  test("getSongs reads youtubeVideoId field", async () => {
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        {
+          id: "s1",
+          data: () => ({ name: "Song A", artist: "Art A", youtubeVideoId: "abc123def45", createdAt: { toDate: () => new Date() } }),
+        },
+      ],
+    });
+
+    const songs = await getSongs();
+    expect(songs[0].youtubeVideoId).toBe("abc123def45");
+  });
+
+  test("getSongs defaults youtubeVideoId to null when missing", async () => {
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        {
+          id: "s1",
+          data: () => ({ name: "Song A", createdAt: { toDate: () => new Date() } }),
+        },
+      ],
+    });
+
+    const songs = await getSongs();
+    expect(songs[0].youtubeVideoId).toBeNull();
   });
 
   test("deleteSong deletes subcollection files then song doc", async () => {

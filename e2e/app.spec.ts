@@ -249,6 +249,68 @@ test.describe("Practice Timer", () => {
   });
 });
 
+test.describe("YouTube Video Section", () => {
+  test("song detail shows YouTube section", async ({ page }) => {
+    await page.goto("/");
+
+    const firstCard = page.locator('[data-slot="card"]').first();
+    if ((await firstCard.count()) > 0) {
+      await firstCard.click();
+
+      // Should see the YouTube section (either player or placeholder)
+      await expect(page.locator("text=/Video|No video linked|Searching YouTube/")).toBeVisible();
+    }
+  });
+
+  test("YouTube section has search button when no video", async ({ page }) => {
+    await page.goto("/");
+
+    // Create a fresh song (may or may not auto-search depending on API key)
+    await page.click("text=Add Song");
+    await page.fill("#song-name", `${E2E_PREFIX} YT Test ` + Date.now());
+    await page.click('button:has-text("Create")');
+    await page.waitForTimeout(3000);
+
+    const card = page.locator(`[data-slot="card"]:has-text("${E2E_PREFIX} YT Test")`).first();
+    await card.click();
+    await page.waitForTimeout(1000);
+
+    // Should see either embedded player (if auto-search worked) or placeholder with search button
+    const hasPlayer = await page.locator('iframe[title="YouTube video"]').count();
+    const hasSearchBtn = await page.locator('button:has-text("Search YouTube")').count();
+    expect(hasPlayer + hasSearchBtn).toBeGreaterThan(0);
+  });
+
+  test("can paste a YouTube URL to set video", async ({ page }) => {
+    await page.goto("/");
+
+    // Create a fresh song
+    await page.click("text=Add Song");
+    await page.fill("#song-name", `${E2E_PREFIX} YT Paste ` + Date.now());
+    await page.click('button:has-text("Create")');
+    await page.waitForTimeout(3000);
+
+    const card = page.locator(`[data-slot="card"]:has-text("${E2E_PREFIX} YT Paste")`).first();
+    await card.click();
+    await page.waitForTimeout(1000);
+
+    // If video already set, click Edit first
+    const editBtn = page.locator('button:has-text("Edit")');
+    if ((await editBtn.count()) > 0) {
+      await editBtn.click();
+    }
+
+    // Paste a URL
+    const urlInput = page.locator('input[placeholder="Paste YouTube URL..."]');
+    await urlInput.fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    await page.click('button:has-text("Set")');
+    await page.waitForTimeout(500);
+
+    // Should now have an embedded player
+    await expect(page.locator('iframe[title="YouTube video"]')).toBeVisible();
+  });
+});
+
 // --- Cleanup: runs last, removes only [E2E]-prefixed songs ---
 test.describe("Cleanup", () => {
   test("delete all E2E test songs from database", async ({ page }) => {

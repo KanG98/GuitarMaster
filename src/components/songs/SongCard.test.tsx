@@ -9,6 +9,7 @@ describe("SongCard", () => {
     name: "Hotel California",
     artist: "Eagles",
     totalPracticeSeconds: 0,
+    youtubeVideoId: null,
     createdAt: new Date(),
   };
 

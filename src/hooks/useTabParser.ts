@@ -6,7 +6,9 @@ import {
   createSong,
   getSongs,
   deleteSong,
+  updateSongVideo,
 } from "@/lib/fileService";
+import { searchYouTube, buildGuitarTabQuery } from "@/lib/youtubeService";
 
 interface UseSongManagerReturn {
   songs: SongRecord[];
@@ -43,6 +45,23 @@ export function useSongManager(): UseSongManagerReturn {
     try {
       const record = await createSong(name, artist);
       setSongs((prev) => [record, ...prev]);
+
+      // Auto-search YouTube in background (fire-and-forget)
+      try {
+        const query = buildGuitarTabQuery(name, artist);
+        const results = await searchYouTube(query);
+        if (results.length > 0) {
+          const bestMatch = results[0];
+          await updateSongVideo(record.id, bestMatch.videoId);
+          setSongs((prev) =>
+            prev.map((s) =>
+              s.id === record.id ? { ...s, youtubeVideoId: bestMatch.videoId } : s
+            )
+          );
+        }
+      } catch {
+        // YouTube search failure is non-critical; song still created
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create song");
     }
