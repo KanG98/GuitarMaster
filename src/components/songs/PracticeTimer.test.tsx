@@ -145,4 +145,62 @@ describe("PracticeTimer", () => {
     // Only 5 more seconds since last auto-save
     expect(mockUpdatePracticeTime).toHaveBeenCalledWith("song-1", 5);
   });
+
+  describe("video-controlled mode", () => {
+    test("does not auto-start when isPlaying is false", () => {
+      render(<PracticeTimer {...defaultProps} isPlaying={false} />);
+
+      act(() => {
+        jest.advanceTimersByTime(60000);
+      });
+
+      expect(screen.getByText("00:00")).toBeInTheDocument();
+    });
+
+    test("starts counting when isPlaying becomes true", () => {
+      const { rerender } = render(<PracticeTimer {...defaultProps} isPlaying={false} />);
+
+      rerender(<PracticeTimer {...defaultProps} isPlaying={true} />);
+
+      act(() => {
+        jest.advanceTimersByTime(60000);
+      });
+
+      expect(screen.getByText("00:01")).toBeInTheDocument();
+    });
+
+    test("pauses when isPlaying becomes false", () => {
+      const { rerender } = render(<PracticeTimer {...defaultProps} isPlaying={true} />);
+
+      act(() => {
+        jest.advanceTimersByTime(60000);
+      });
+
+      rerender(<PracticeTimer {...defaultProps} isPlaying={false} />);
+
+      act(() => {
+        jest.advanceTimersByTime(60000);
+      });
+
+      // Should still be 1 minute, not 2
+      expect(screen.getByText("00:01")).toBeInTheDocument();
+    });
+
+    test("hides manual toggle button when video-controlled", () => {
+      render(<PracticeTimer {...defaultProps} isPlaying={false} />);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
+
+    test("saves on unmount in video-controlled mode", () => {
+      const { unmount } = render(<PracticeTimer {...defaultProps} isPlaying={true} />);
+
+      act(() => {
+        jest.advanceTimersByTime(10000);
+      });
+
+      unmount();
+
+      expect(mockUpdatePracticeTime).toHaveBeenCalledWith("song-1", 10);
+    });
+  });
 });

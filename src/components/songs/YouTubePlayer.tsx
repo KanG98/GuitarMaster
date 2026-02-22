@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 
 interface YouTubePlayerProps {
   videoId: string;
+  onPlayingChange?: (playing: boolean) => void;
 }
 
 function formatTime(seconds: number): string {
@@ -43,7 +44,7 @@ function loadYouTubeAPI(): Promise<void> {
   return apiLoadPromise;
 }
 
-export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
+export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) {
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,6 +82,11 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
             if (!destroyed) {
               setDuration(event.target.getDuration());
               setIsReady(true);
+            }
+          },
+          onStateChange: (event: YT.OnStateChangeEvent) => {
+            if (!destroyed) {
+              onPlayingChange?.(event.data === YT.PlayerState.PLAYING);
             }
           },
         },

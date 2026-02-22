@@ -16,6 +16,7 @@ interface YouTubeSectionProps {
   onSearch: (query: string) => void;
   onSelectVideo: (videoId: string) => void;
   onRemoveVideo: () => void;
+  onPlayingChange?: (playing: boolean) => void;
 }
 
 export function YouTubeSection({
@@ -28,6 +29,7 @@ export function YouTubeSection({
   onSearch,
   onSelectVideo,
   onRemoveVideo,
+  onPlayingChange,
 }: YouTubeSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState("");
@@ -84,7 +86,7 @@ export function YouTubeSection({
             Edit
           </Button>
         </div>
-        <YouTubePlayer videoId={videoId} />
+        <YouTubePlayer videoId={videoId} onPlayingChange={onPlayingChange} />
       </div>
     );
   }

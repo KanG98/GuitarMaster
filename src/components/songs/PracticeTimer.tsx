@@ -9,11 +9,13 @@ interface PracticeTimerProps {
   songId: string;
   initialSeconds: number;
   secondsRef?: React.RefObject<number>;
+  isPlaying?: boolean;
 }
 
-export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSecondsRef }: PracticeTimerProps) {
+export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSecondsRef, isPlaying }: PracticeTimerProps) {
+  const videoControlled = isPlaying !== undefined;
   const [seconds, setSeconds] = useState(initialSeconds);
-  const [isRunning, setIsRunning] = useState(true);
+  const [isRunning, setIsRunning] = useState(!videoControlled);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const savedSecondsRef = useRef(initialSeconds);
 
@@ -33,8 +35,19 @@ export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSeco
     setIsRunning(false);
   }, []);
 
-  // Start timer on mount
+  // Video-controlled mode: sync with isPlaying prop
   useEffect(() => {
+    if (!videoControlled) return;
+    if (isPlaying) {
+      start();
+    } else {
+      pause();
+    }
+  }, [isPlaying, videoControlled, start, pause]);
+
+  // Manual mode: start timer on mount
+  useEffect(() => {
+    if (videoControlled) return;
     start();
     return () => {
       if (intervalRef.current) {
@@ -42,7 +55,7 @@ export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSeco
         intervalRef.current = null;
       }
     };
-  }, [start]);
+  }, [start, videoControlled]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -88,18 +101,20 @@ export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSeco
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Timer className="h-4 w-4" />
       <span className="font-mono tabular-nums">{display}</span>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0"
-        onClick={toggle}
-      >
-        {isRunning ? (
-          <Pause className="h-3 w-3" />
-        ) : (
-          <Play className="h-3 w-3" />
-        )}
-      </Button>
+      {!videoControlled && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={toggle}
+        >
+          {isRunning ? (
+            <Pause className="h-3 w-3" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
+        </Button>
+      )}
     </div>
   );
 }

@@ -37,6 +37,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   const [youtubeResults, setYoutubeResults] = useState<YouTubeSearchResult[]>([]);
   const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   const handleBack = async () => {
     const delta = practiceSecondsRef.current - song.totalPracticeSeconds;
@@ -146,7 +147,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <PracticeTimer songId={song.id} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} />
+          <PracticeTimer songId={song.id} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} isPlaying={videoId ? isVideoPlaying : undefined} />
           <Button
             variant="outline"
             size="sm"
@@ -172,6 +173,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
               onSearch={handleYouTubeSearch}
               onSelectVideo={handleSelectVideo}
               onRemoveVideo={handleRemoveVideo}
+              onPlayingChange={setIsVideoPlaying}
             />
           </div>
           <div className="lg:col-span-2">
@@ -212,6 +214,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
             onSearch={handleYouTubeSearch}
             onSelectVideo={handleSelectVideo}
             onRemoveVideo={handleRemoveVideo}
+            onPlayingChange={setIsVideoPlaying}
           />
           {files.length === 0 && (
             <UploadZone
