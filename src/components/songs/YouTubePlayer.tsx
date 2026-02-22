@@ -216,7 +216,20 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
 
             <div className="w-px h-5 bg-border" />
 
-            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+              <button
+                onClick={() => {
+                  if (!playerRef.current) return;
+                  const t = Math.floor(playerRef.current.getCurrentTime());
+                  const b = loopB ?? duration;
+                  if (t < b) handleLoopRange([t, b]);
+                }}
+                className="h-5 px-1.5 text-[10px] font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+                title="Set loop start to current position"
+                data-testid="set-loop-a"
+              >
+                A
+              </button>
               <span className="text-xs font-mono text-muted-foreground w-10 text-right">
                 {formatTime(loopA ?? 0)}
               </span>
@@ -232,6 +245,19 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
               <span className="text-xs font-mono text-muted-foreground w-10">
                 {formatTime(loopB ?? duration)}
               </span>
+              <button
+                onClick={() => {
+                  if (!playerRef.current) return;
+                  const t = Math.floor(playerRef.current.getCurrentTime());
+                  const a = loopA ?? 0;
+                  if (t > a) handleLoopRange([a, t]);
+                }}
+                className="h-5 px-1.5 text-[10px] font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+                title="Set loop end to current position"
+                data-testid="set-loop-b"
+              >
+                B
+              </button>
               <Button
                 variant={isLooping ? "secondary" : "ghost"}
                 size="sm"
