@@ -106,7 +106,7 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
       loopIntervalRef.current = setInterval(() => {
         if (!playerRef.current) return;
         const current = playerRef.current.getCurrentTime();
-        if (current >= loopB) {
+        if (current >= loopB || current < loopA) {
           playerRef.current.seekTo(loopA, true);
         }
       }, 250);
@@ -133,9 +133,25 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
   }, []);
 
   const handleLoopRange = useCallback((values: number[]) => {
-    setLoopA(values[0]);
-    setLoopB(values[1]);
+    const [a, b] = values;
+    setLoopA(a);
+    setLoopB(b);
     setIsLooping(true);
+
+    if (playerRef.current) {
+      // Auto-play if not already playing
+      const state = playerRef.current.getPlayerState();
+      if (state !== 1) { // not PLAYING
+        playerRef.current.seekTo(a, true);
+        playerRef.current.playVideo();
+      } else {
+        // If current position is outside the loop range, jump into it
+        const current = playerRef.current.getCurrentTime();
+        if (current < a || current >= b) {
+          playerRef.current.seekTo(a, true);
+        }
+      }
+    }
   }, []);
 
   const toggleLoop = useCallback(() => {
