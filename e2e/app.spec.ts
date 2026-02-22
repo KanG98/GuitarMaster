@@ -353,6 +353,63 @@ test.describe("YouTube Player Controls", () => {
   });
 });
 
+test.describe("Ear Trainer", () => {
+  test("ear trainer tab is visible in header", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('[data-testid="nav-ear-trainer"]')).toBeVisible();
+  });
+
+  test("clicking ear trainer tab shows ear trainer view", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await expect(page.locator('[data-testid="piano-keyboard"]')).toBeVisible();
+  });
+
+  test("piano keyboard has 7 keys", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    const keys = page.locator('[data-testid="piano-keyboard"] button');
+    await expect(keys).toHaveCount(7);
+  });
+
+  test("learn mode shows hint text", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await expect(page.locator("text=Click a key or press")).toBeVisible();
+  });
+
+  test("switching to quiz mode shows quiz panel", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await expect(page.locator('[data-testid="quiz-panel"]')).toBeVisible();
+    await expect(page.locator('[data-testid="start-btn"]')).toBeVisible();
+  });
+
+  test("quiz start and reset flow", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await page.click('[data-testid="mode-quiz"]');
+
+    // Start
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Reset");
+
+    // Reset
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Start");
+  });
+
+  test("can switch back to songs view", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await expect(page.locator('[data-testid="piano-keyboard"]')).toBeVisible();
+
+    await page.click('[data-testid="nav-songs"]');
+    await expect(page.locator("text=Your Songs")).toBeVisible();
+  });
+});
+
 // --- Cleanup: runs last, removes only [E2E]-prefixed songs ---
 test.describe("Cleanup", () => {
   test("delete all E2E test songs from database", async ({ page }) => {
