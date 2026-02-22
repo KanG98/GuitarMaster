@@ -416,19 +416,17 @@ export function ChordLibrary() {
             </div>
           )}
 
-          {/* Feedback overlay */}
+          {/* Feedback banner */}
           {feedback && (
             <div
-              className="fixed inset-0 flex items-center justify-center pointer-events-none z-50"
+              className={`text-center py-3 px-4 rounded-lg font-semibold text-lg ${
+                feedback.type === "correct"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                  : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+              }`}
               data-testid="feedback-overlay"
             >
-              <p
-                className={`text-5xl font-bold animate-bounce ${
-                  feedback.type === "correct" ? "text-emerald-500" : "text-red-500"
-                }`}
-              >
-                {feedback.type === "correct" ? "Correct!" : `It was ${feedback.answer}!`}
-              </p>
+              {feedback.type === "correct" ? "Correct!" : `It was ${feedback.answer}!`}
             </div>
           )}
         </div>
