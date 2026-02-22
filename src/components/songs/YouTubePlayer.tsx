@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { SkipBack, SkipForward, Repeat } from "lucide-react";
+import { SkipBack, SkipForward, Repeat, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 
@@ -18,7 +18,6 @@ function formatTime(seconds: number): string {
 
 const SLOW_SPEEDS = [0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9];
 const FAST_SPEEDS = [1, 1.25, 1.5, 1.75, 2];
-const SKIP_AMOUNTS = [3, 5, 10, 15, 30];
 
 let apiLoadPromise: Promise<void> | null = null;
 
@@ -57,6 +56,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
   const [loopB, setLoopB] = useState<number | null>(null);
   const [isLooping, setIsLooping] = useState(false);
   const [skipAmount, setSkipAmount] = useState(5);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Initialize player
   useEffect(() => {
@@ -201,22 +201,6 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
                 <SkipBack className="h-3 w-3 mr-1" />
                 {skipAmount}s
               </Button>
-              <div className="flex items-center gap-0.5">
-                {SKIP_AMOUNTS.map((amt) => (
-                  <button
-                    key={amt}
-                    onClick={() => setSkipAmount(amt)}
-                    className={`h-5 px-1 text-[10px] rounded transition-colors ${
-                      skipAmount === amt
-                        ? "bg-primary text-primary-foreground font-semibold"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                    data-testid={`skip-amt-${amt}`}
-                  >
-                    {amt}
-                  </button>
-                ))}
-              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -269,6 +253,37 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
                   Clear
                 </Button>
               )}
+              <div className="relative ml-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setShowSettings((s) => !s)}
+                  title="Settings"
+                  data-testid="settings-btn"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </Button>
+                {showSettings && (
+                  <div className="absolute right-0 top-full mt-1 z-10 rounded-lg border bg-popover p-3 shadow-md" data-testid="settings-popover">
+                    <label className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground whitespace-nowrap">Skip (seconds)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={120}
+                        value={skipAmount}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value, 10);
+                          if (v >= 1 && v <= 120) setSkipAmount(v);
+                        }}
+                        className="w-16 text-sm border rounded px-2 py-1 bg-background outline-none focus:ring-1 focus:ring-primary"
+                        data-testid="skip-amount-input"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
