@@ -15,7 +15,8 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5];
+const SLOW_SPEEDS = [0.25, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9];
+const FAST_SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
 let apiLoadPromise: Promise<void> | null = null;
 
@@ -177,88 +178,112 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
 
       {/* Controls toolbar */}
       {isReady && (
-        <div className="flex flex-wrap items-center gap-3 text-sm" data-testid="player-controls">
-          {/* Skip controls */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2"
-              onClick={() => skip(-5)}
-              title="Skip back 5s"
-            >
-              <SkipBack className="h-3 w-3 mr-1" />
-              5s
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2"
-              onClick={() => skip(5)}
-              title="Skip forward 5s"
-            >
-              5s
-              <SkipForward className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
-
-          <div className="w-px h-5 bg-border" />
-
-          {/* A-B Loop controls */}
-          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-            <span className="text-xs font-mono text-muted-foreground w-10 text-right">
-              {formatTime(loopA ?? 0)}
-            </span>
-            <Slider
-              min={0}
-              max={Math.max(duration, 1)}
-              step={1}
-              value={[loopA ?? 0, loopB ?? duration]}
-              onValueChange={handleLoopRange}
-              className="flex-1"
-              data-testid="loop-slider"
-            />
-            <span className="text-xs font-mono text-muted-foreground w-10">
-              {formatTime(loopB ?? duration)}
-            </span>
-            <Button
-              variant={isLooping ? "secondary" : "ghost"}
-              size="sm"
-              className={`h-7 px-2 ${isLooping ? "text-primary" : ""}`}
-              onClick={toggleLoop}
-              disabled={!hasLoop}
-              title={isLooping ? "Disable loop" : "Enable loop"}
-            >
-              <Repeat className="h-3 w-3" />
-            </Button>
-            {hasLoop && (
+        <div className="space-y-2 max-w-2xl" data-testid="player-controls">
+          {/* Row 1: Skip + Loop */}
+          <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-1 text-xs text-muted-foreground"
-                onClick={clearLoop}
-                title="Clear loop points"
+                className="h-7 px-2"
+                onClick={() => skip(-5)}
+                title="Skip back 5s"
               >
-                Clear
+                <SkipBack className="h-3 w-3 mr-1" />
+                5s
               </Button>
-            )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2"
+                onClick={() => skip(5)}
+                title="Skip forward 5s"
+              >
+                5s
+                <SkipForward className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+
+            <div className="w-px h-5 bg-border" />
+
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <span className="text-xs font-mono text-muted-foreground w-10 text-right">
+                {formatTime(loopA ?? 0)}
+              </span>
+              <Slider
+                min={0}
+                max={Math.max(duration, 1)}
+                step={1}
+                value={[loopA ?? 0, loopB ?? duration]}
+                onValueChange={handleLoopRange}
+                className="flex-1"
+                data-testid="loop-slider"
+              />
+              <span className="text-xs font-mono text-muted-foreground w-10">
+                {formatTime(loopB ?? duration)}
+              </span>
+              <Button
+                variant={isLooping ? "secondary" : "ghost"}
+                size="sm"
+                className={`h-7 px-2 ${isLooping ? "text-primary" : ""}`}
+                onClick={toggleLoop}
+                disabled={!hasLoop}
+                title={isLooping ? "Disable loop" : "Enable loop"}
+              >
+                <Repeat className="h-3 w-3" />
+              </Button>
+              {hasLoop && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-1 text-xs text-muted-foreground"
+                  onClick={clearLoop}
+                  title="Clear loop points"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div className="w-px h-5 bg-border" />
-
-          {/* Speed controls */}
-          <div className="flex items-center gap-0.5">
-            {SPEED_OPTIONS.map((rate) => (
-              <Button
-                key={rate}
-                variant={playbackRate === rate ? "secondary" : "ghost"}
-                size="sm"
-                className={`h-7 px-2 text-xs ${playbackRate === rate ? "font-semibold" : ""}`}
-                onClick={() => changeSpeed(rate)}
-              >
-                {rate}x
-              </Button>
-            ))}
+          {/* Row 2: Speed controls */}
+          <div className="rounded-lg border bg-muted/30 px-3 py-2 space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-8 shrink-0">Slow</span>
+              <div className="flex items-center gap-1">
+                {SLOW_SPEEDS.map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => changeSpeed(rate)}
+                    className={`h-6 px-1.5 text-xs rounded-full transition-colors ${
+                      playbackRate === rate
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider w-8 shrink-0">Fast</span>
+              <div className="flex items-center gap-1">
+                {FAST_SPEEDS.map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => changeSpeed(rate)}
+                    className={`h-6 px-1.5 text-xs rounded-full transition-colors ${
+                      playbackRate === rate
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

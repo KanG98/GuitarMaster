@@ -106,13 +106,15 @@ describe("YouTubePlayer", () => {
     expect(mockSeekTo).toHaveBeenCalledWith(25, true);
   });
 
-  test("renders speed buttons", async () => {
+  test("renders speed buttons with slow and fast groups", async () => {
     await renderAndReady();
+    expect(screen.getByText("0.25x")).toBeInTheDocument();
     expect(screen.getByText("0.5x")).toBeInTheDocument();
     expect(screen.getByText("0.75x")).toBeInTheDocument();
+    expect(screen.getByText("0.9x")).toBeInTheDocument();
     expect(screen.getByText("1x")).toBeInTheDocument();
-    expect(screen.getByText("1.25x")).toBeInTheDocument();
     expect(screen.getByText("1.5x")).toBeInTheDocument();
+    expect(screen.getByText("2x")).toBeInTheDocument();
   });
 
   test("speed button calls setPlaybackRate", async () => {
