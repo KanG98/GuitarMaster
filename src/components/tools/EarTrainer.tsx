@@ -27,20 +27,31 @@ function pickRandomNote(exclude: string | null): NoteName {
   return note;
 }
 
-function pickIntervalPair(): [NoteName, NoteName] {
-  const i = Math.floor(Math.random() * NOTES.length);
-  let j: number;
-  do {
-    j = Math.floor(Math.random() * NOTES.length);
-  } while (j === i);
-  return [NOTES[i], NOTES[j]];
+function pickNoteSequence(length: number): NoteName[] {
+  const seq: NoteName[] = [NOTES[Math.floor(Math.random() * NOTES.length)]];
+  for (let k = 1; k < length; k++) {
+    let note: NoteName;
+    do {
+      note = NOTES[Math.floor(Math.random() * NOTES.length)];
+    } while (note === seq[k - 1]);
+    seq.push(note);
+  }
+  return seq;
+}
+
+function getCorrectDirections(notes: NoteName[]): Direction[] {
+  return notes.slice(1).map((note, i) =>
+    NOTES.indexOf(note) > NOTES.indexOf(notes[i]) ? "up" : "down"
+  );
 }
 
 export function EarTrainer() {
   const [mode, setMode] = useState<Mode>("learn");
   const [quizState, setQuizState] = useState<QuizState>("idle");
   const [currentNote, setCurrentNote] = useState<NoteName | null>(null);
-  const [intervalPair, setIntervalPair] = useState<[NoteName, NoteName] | null>(null);
+  const [noteSequence, setNoteSequence] = useState<NoteName[]>([]);
+  const [seqLength, setSeqLength] = useState(2);
+  const [answers, setAnswers] = useState<Direction[]>([]);
   const [correct, setCorrect] = useState(0);
   const [total, setTotal] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -52,11 +63,15 @@ export function EarTrainer() {
 
   const quizStateRef = useRef(quizState);
   const currentNoteRef = useRef(currentNote);
-  const intervalPairRef = useRef(intervalPair);
+  const noteSequenceRef = useRef(noteSequence);
+  const seqLengthRef = useRef(seqLength);
+  const answersRef = useRef(answers);
   const modeRef = useRef(mode);
   quizStateRef.current = quizState;
   currentNoteRef.current = currentNote;
-  intervalPairRef.current = intervalPair;
+  noteSequenceRef.current = noteSequence;
+  seqLengthRef.current = seqLength;
+  answersRef.current = answers;
   modeRef.current = mode;
 
   const highlightKey = useCallback((note: string) => {
@@ -109,7 +124,8 @@ export function EarTrainer() {
   const resetQuiz = useCallback(() => {
     setQuizState("idle");
     setCurrentNote(null);
-    setIntervalPair(null);
+    setNoteSequence([]);
+    setAnswers([]);
   }, []);
 
   const replay = useCallback(() => {
@@ -148,44 +164,59 @@ export function EarTrainer() {
   }, [flashKey, showFeedback, nextRound]);
 
   // --- Interval Direction ---
-  const playIntervalPair = useCallback((pair: [NoteName, NoteName]) => {
-    playNote(pair[0]);
-    setTimeout(() => playNote(pair[1]), 600);
+  const playNoteSequence = useCallback((notes: NoteName[]) => {
+    notes.forEach((note, i) => {
+      if (i === 0) playNote(note);
+      else setTimeout(() => playNote(note), 600 * i);
+    });
   }, []);
 
   const nextIntervalRound = useCallback(() => {
     setQuizState("playing");
-    const pair = pickIntervalPair();
-    setIntervalPair(pair);
-    playIntervalPair(pair);
+    setAnswers([]);
+    const seq = pickNoteSequence(seqLengthRef.current);
+    setNoteSequence(seq);
+    playNoteSequence(seq);
 
     setTimeout(() => {
       setQuizState("waiting");
-    }, 1200);
-  }, [playIntervalPair]);
+    }, 600 * seqLengthRef.current);
+  }, [playNoteSequence]);
 
   const startInterval = useCallback(() => {
     setCorrect(0);
     setTotal(0);
     setStreak(0);
     setBestStreak(0);
-    setIntervalPair(null);
+    setNoteSequence([]);
+    setAnswers([]);
     nextIntervalRound();
   }, [nextIntervalRound]);
 
   const replayInterval = useCallback(() => {
-    if (quizStateRef.current === "waiting" && intervalPairRef.current) {
-      playIntervalPair(intervalPairRef.current);
+    if (quizStateRef.current === "waiting" && noteSequenceRef.current.length > 0) {
+      playNoteSequence(noteSequenceRef.current);
     }
-  }, [playIntervalPair]);
+  }, [playNoteSequence]);
 
   const submitDirection = useCallback((direction: Direction) => {
-    if (quizStateRef.current !== "waiting" || !intervalPairRef.current) return;
+    if (quizStateRef.current !== "waiting" || noteSequenceRef.current.length === 0) return;
 
+    const newAnswers = [...answersRef.current, direction];
+    const requiredCount = noteSequenceRef.current.length - 1;
+
+    // Not all answers yet — just record and show progress
+    if (newAnswers.length < requiredCount) {
+      setAnswers(newAnswers);
+      flashDirection(direction, "correct"); // brief flash to acknowledge input
+      return;
+    }
+
+    // All answers submitted — evaluate
+    setAnswers(newAnswers);
     setQuizState("feedback");
-    const [note1, note2] = intervalPairRef.current;
-    const correctDir: Direction = NOTES.indexOf(note2) > NOTES.indexOf(note1) ? "up" : "down";
-    const isCorrect = direction === correctDir;
+    const correctDirs = getCorrectDirections(noteSequenceRef.current);
+    const isCorrect = newAnswers.every((a, i) => a === correctDirs[i]);
 
     setTotal((p) => p + 1);
     if (isCorrect) {
@@ -199,10 +230,10 @@ export function EarTrainer() {
     } else {
       setStreak(0);
       flashDirection(direction, "wrong");
-      flashDirection(correctDir, "correct");
     }
 
-    showFeedback(isCorrect, correctDir === "up" ? "Up" : "Down");
+    const correctLabel = correctDirs.map((d) => (d === "up" ? "↑" : "↓")).join(" ");
+    showFeedback(isCorrect, correctLabel);
 
     setTimeout(() => {
       nextIntervalRound();
@@ -308,7 +339,11 @@ export function EarTrainer() {
           <p className="text-center font-medium" data-testid="quiz-prompt">
             {quizState === "idle" && 'Click "Start" to begin!'}
             {quizState === "playing" && "Listen..."}
-            {quizState === "waiting" && (mode === "interval" ? "Up or Down?" : "What note was that?")}
+            {quizState === "waiting" && (mode === "interval"
+              ? (seqLength === 2
+                ? "Up or Down?"
+                : `Direction ${answers.length + 1} of ${seqLength - 1}?`)
+              : "What note was that?")}
             {quizState === "feedback" && ""}
           </p>
 
@@ -390,32 +425,76 @@ export function EarTrainer() {
         </div>
       )}
 
+      {/* Sequence Length Selector (interval mode) */}
+      {mode === "interval" && (
+        <div className="flex items-center justify-center gap-2" data-testid="seq-length-selector">
+          <span className="text-sm text-muted-foreground">Notes:</span>
+          {[2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              onClick={() => { setSeqLength(n); resetQuiz(); }}
+              disabled={quizState !== "idle"}
+              data-testid={`seq-len-${n}`}
+              className={`w-8 h-8 rounded-full text-sm font-semibold transition-colors
+                ${seqLength === n
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted-foreground/20 text-foreground"}
+                ${quizState !== "idle" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+              `}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Direction Buttons (interval mode) */}
       {mode === "interval" && (
-        <div className="flex gap-3 justify-center" data-testid="direction-buttons">
-          {(["up", "down"] as Direction[]).map((dir) => {
-            const flash = directionFlash?.dir === dir ? directionFlash.type : null;
-            let bgClass = "bg-white hover:bg-gray-100 text-gray-900";
-            if (flash === "correct") bgClass = "bg-emerald-400 text-white";
-            else if (flash === "wrong") bgClass = "bg-red-400 text-white";
+        <div className="space-y-3">
+          <div className="flex gap-3 justify-center" data-testid="direction-buttons">
+            {(["up", "down"] as Direction[]).map((dir) => {
+              const flash = directionFlash?.dir === dir ? directionFlash.type : null;
+              let bgClass = "bg-white hover:bg-gray-100 text-gray-900";
+              if (flash === "correct") bgClass = "bg-emerald-400 text-white";
+              else if (flash === "wrong") bgClass = "bg-red-400 text-white";
 
-            return (
-              <button
-                key={dir}
-                disabled={keysDisabled}
-                onClick={() => submitDirection(dir)}
-                data-testid={`dir-${dir}`}
-                className={`flex-1 max-w-48 h-40 rounded-lg border-2 border-gray-300 text-lg font-bold
-                  transition-all duration-100 shadow-md flex flex-col items-center justify-center gap-2
-                  ${bgClass}
-                  ${keysDisabled ? "opacity-50 cursor-not-allowed" : "active:translate-y-0.5 active:shadow-sm cursor-pointer"}
-                `}
-              >
-                {dir === "up" ? <ArrowUp className="h-8 w-8" /> : <ArrowDown className="h-8 w-8" />}
-                {dir === "up" ? "Up" : "Down"}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={dir}
+                  disabled={keysDisabled}
+                  onClick={() => submitDirection(dir)}
+                  data-testid={`dir-${dir}`}
+                  className={`flex-1 max-w-48 h-40 rounded-lg border-2 border-gray-300 text-lg font-bold
+                    transition-all duration-100 shadow-md flex flex-col items-center justify-center gap-2
+                    ${bgClass}
+                    ${keysDisabled ? "opacity-50 cursor-not-allowed" : "active:translate-y-0.5 active:shadow-sm cursor-pointer"}
+                  `}
+                >
+                  {dir === "up" ? <ArrowUp className="h-8 w-8" /> : <ArrowDown className="h-8 w-8" />}
+                  {dir === "up" ? "Up" : "Down"}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Progress dots (only for sequences > 2) */}
+          {seqLength > 2 && quizState === "waiting" && (
+            <div className="flex justify-center gap-1.5" data-testid="progress-dots">
+              {Array.from({ length: seqLength - 1 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    i < answers.length
+                      ? "bg-primary"
+                      : i === answers.length
+                        ? "bg-primary/40 animate-pulse"
+                        : "bg-muted-foreground/20"
+                  }`}
+                  data-testid={`dot-${i}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -35,12 +35,12 @@ describe("extractVideoId", () => {
 });
 
 describe("buildGuitarTabQuery", () => {
-  test("combines song name, artist, and 'guitar tab'", () => {
-    expect(buildGuitarTabQuery("Hotel California", "Eagles")).toBe("Hotel California Eagles guitar tab");
+  test("combines song name, artist, and 'official video'", () => {
+    expect(buildGuitarTabQuery("Hotel California", "Eagles")).toBe("Hotel California Eagles official video");
   });
 
   test("handles missing artist", () => {
-    expect(buildGuitarTabQuery("Wonderwall", "")).toBe("Wonderwall guitar tab");
+    expect(buildGuitarTabQuery("Wonderwall", "")).toBe("Wonderwall official video");
   });
 });
 

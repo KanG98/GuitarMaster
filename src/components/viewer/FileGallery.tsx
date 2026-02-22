@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, ReactNode } from "react";
 import { FileImage, FileText, Trash2, Eye, GripVertical } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ interface FileGalleryProps {
   onView: (file: FileRecord, index: number) => void;
   onDelete: (file: FileRecord) => void;
   onReorder?: (reorderedFiles: FileRecord[]) => void;
+  uploadSlot?: ReactNode;
 }
 
 function formatFileSize(bytes: number): string {
@@ -27,6 +28,7 @@ export function FileGallery({
   onView,
   onDelete,
   onReorder,
+  uploadSlot,
 }: FileGalleryProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -41,7 +43,11 @@ export function FileGallery({
   }
 
   if (files.length === 0) {
-    return null;
+    return uploadSlot ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {uploadSlot}
+      </div>
+    ) : null;
   }
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -92,7 +98,7 @@ export function FileGallery({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {files.map((file, index) => (
         <Card
           key={file.id}
@@ -160,6 +166,7 @@ export function FileGallery({
           </CardContent>
         </Card>
       ))}
+      {uploadSlot}
     </div>
   );
 }

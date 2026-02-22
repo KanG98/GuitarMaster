@@ -26,7 +26,6 @@ export function useSongManager(): UseSongManagerReturn {
 
   const refresh = useCallback(async () => {
     try {
-      setIsLoading(true);
       const result = await getSongs();
       setSongs(result);
     } catch (err) {
@@ -46,7 +45,7 @@ export function useSongManager(): UseSongManagerReturn {
       const record = await createSong(name, artist);
       setSongs((prev) => [record, ...prev]);
 
-      // Auto-search YouTube in background (fire-and-forget)
+      // Auto-search YouTube in background
       try {
         const query = buildGuitarTabQuery(name, artist);
         const results = await searchYouTube(query);
@@ -59,8 +58,8 @@ export function useSongManager(): UseSongManagerReturn {
             )
           );
         }
-      } catch {
-        // YouTube search failure is non-critical; song still created
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "YouTube search failed");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create song");

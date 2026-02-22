@@ -12,6 +12,7 @@ interface YouTubeSectionProps {
   artist: string;
   isSearching: boolean;
   searchResults: YouTubeSearchResult[];
+  searchError?: string | null;
   onSearch: (query: string) => void;
   onSelectVideo: (videoId: string) => void;
   onRemoveVideo: () => void;
@@ -23,6 +24,7 @@ export function YouTubeSection({
   artist,
   isSearching,
   searchResults,
+  searchError,
   onSearch,
   onSelectVideo,
   onRemoveVideo,
@@ -70,12 +72,8 @@ export function YouTubeSection({
   // Has video — show player
   if (videoId && !isEditing) {
     return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Youtube className="h-4 w-4" />
-            <span>Video</span>
-          </div>
+      <div className="space-y-1">
+        <div className="flex justify-end">
           <Button
             variant="ghost"
             size="sm"
@@ -170,6 +168,11 @@ export function YouTubeSection({
         )}
       </div>
       {urlError && <p className="text-xs text-destructive">{urlError}</p>}
+
+      {/* Search error */}
+      {searchError && (
+        <p className="text-xs text-destructive">{searchError}</p>
+      )}
 
       {/* Search results */}
       {searchResults.length > 0 && (

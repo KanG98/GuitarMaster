@@ -72,9 +72,9 @@ export function UploadZone({
   if (compact) {
     return (
       <div className="w-full">
-        <div
+        <Card
           className={cn(
-            "border border-dashed rounded-lg p-3 flex items-center justify-center gap-2 cursor-pointer transition-all",
+            "overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01]",
             isDragging && "border-primary bg-primary/5",
             isUploading && "pointer-events-none opacity-60"
           )}
@@ -83,18 +83,21 @@ export function UploadZone({
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
         >
-          {isUploading ? (
-            <>
-              <div className="h-4 w-4 rounded-full border-2 border-muted border-t-primary animate-spin" />
-              <span className="text-sm text-muted-foreground">Uploading...</span>
-            </>
-          ) : (
-            <Button variant="ghost" size="sm" className="gap-1" type="button">
-              <Plus className="h-4 w-4" />
-              Add File
-            </Button>
-          )}
-        </div>
+          <div className="aspect-[4/3] bg-muted flex items-center justify-center">
+            {isUploading ? (
+              <div className="h-8 w-8 rounded-full border-4 border-muted-foreground/20 border-t-primary animate-spin" />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Plus className="h-12 w-12" />
+              </div>
+            )}
+          </div>
+          <CardContent className="p-3">
+            <p className="font-medium text-sm text-center">
+              {isUploading ? "Uploading..." : "Add File"}
+            </p>
+          </CardContent>
+        </Card>
 
         {error && (
           <div className="mt-2 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">

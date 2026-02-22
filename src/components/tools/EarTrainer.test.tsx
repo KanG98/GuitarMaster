@@ -127,17 +127,27 @@ describe("EarTrainer", () => {
   });
 
   // --- Interval Direction Mode ---
-  test("interval: switching shows direction buttons", () => {
+  test("interval: switching shows direction buttons and seq selector", () => {
     render(<EarTrainer />);
     fireEvent.click(screen.getByTestId("mode-interval"));
     expect(screen.getByTestId("direction-buttons")).toBeInTheDocument();
     expect(screen.getByTestId("dir-up")).toBeInTheDocument();
     expect(screen.getByTestId("dir-down")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-length-selector")).toBeInTheDocument();
     // Piano keyboard should not be visible
     expect(screen.queryByTestId("piano-keyboard")).not.toBeInTheDocument();
   });
 
-  test("interval: Start plays two notes", () => {
+  test("interval: sequence length selector has options 2-5", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    expect(screen.getByTestId("seq-len-2")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-len-3")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-len-4")).toBeInTheDocument();
+    expect(screen.getByTestId("seq-len-5")).toBeInTheDocument();
+  });
+
+  test("interval: Start plays two notes (default seq length 2)", () => {
     render(<EarTrainer />);
     fireEvent.click(screen.getByTestId("mode-interval"));
     fireEvent.click(screen.getByTestId("start-btn"));
@@ -192,5 +202,70 @@ describe("EarTrainer", () => {
     render(<EarTrainer />);
     fireEvent.click(screen.getByTestId("mode-interval"));
     expect(screen.getByText(/arrows to answer/)).toBeInTheDocument();
+  });
+
+  // --- Multi-note sequence tests ---
+  test("interval: 3-note sequence plays 3 notes", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("seq-len-3"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    expect(mockPlayNote).toHaveBeenCalledTimes(1);
+    act(() => { jest.advanceTimersByTime(600); });
+    expect(mockPlayNote).toHaveBeenCalledTimes(2);
+    act(() => { jest.advanceTimersByTime(600); });
+    expect(mockPlayNote).toHaveBeenCalledTimes(3);
+  });
+
+  test("interval: 3-note sequence requires 2 answers for score", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("seq-len-3"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    // Wait for all 3 notes + waiting state
+    act(() => { jest.advanceTimersByTime(1800); });
+
+    const notes = ["C", "D", "E", "F", "G", "A", "B"];
+    const n1 = mockPlayNote.mock.calls[0][0];
+    const n2 = mockPlayNote.mock.calls[1][0];
+    const n3 = mockPlayNote.mock.calls[2][0];
+    const dir1 = notes.indexOf(n2) > notes.indexOf(n1) ? "up" : "down";
+    const dir2 = notes.indexOf(n3) > notes.indexOf(n2) ? "up" : "down";
+
+    // First answer — should NOT score yet
+    fireEvent.click(screen.getByTestId(`dir-${dir1}`));
+    expect(screen.getByTestId("score-value")).toHaveTextContent("0 / 0");
+
+    // Second answer — now score
+    fireEvent.click(screen.getByTestId(`dir-${dir2}`));
+    expect(screen.getByTestId("score-value")).toHaveTextContent("1 / 1");
+  });
+
+  test("interval: progress dots appear for 3+ note sequences", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("seq-len-3"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    act(() => { jest.advanceTimersByTime(1800); });
+
+    expect(screen.getByTestId("progress-dots")).toBeInTheDocument();
+    expect(screen.getByTestId("dot-0")).toBeInTheDocument();
+    expect(screen.getByTestId("dot-1")).toBeInTheDocument();
+  });
+
+  test("interval: changing seq length resets quiz", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    // Now in playing state, reset by going back to idle first
+    fireEvent.click(screen.getByTestId("start-btn")); // Reset
+    fireEvent.click(screen.getByTestId("seq-len-4"));
+
+    expect(screen.getByTestId("start-btn")).toHaveTextContent("Start");
+    expect(screen.getByTestId("quiz-prompt")).toHaveTextContent('Click "Start" to begin!');
   });
 });

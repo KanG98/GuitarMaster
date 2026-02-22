@@ -60,7 +60,7 @@ describe("YouTubeSection", () => {
     const onSearch = jest.fn();
     render(<YouTubeSection {...defaultProps} onSearch={onSearch} />);
     await userEvent.click(screen.getByText("Search YouTube"));
-    expect(onSearch).toHaveBeenCalledWith("Hotel California Eagles guitar tab");
+    expect(onSearch).toHaveBeenCalledWith("Hotel California Eagles official video");
   });
 
   test("displays search results", () => {

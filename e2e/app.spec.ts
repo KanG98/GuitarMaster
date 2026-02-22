@@ -409,13 +409,16 @@ test.describe("Ear Trainer", () => {
     await expect(page.locator("text=Your Songs")).toBeVisible();
   });
 
-  test("interval tab shows direction buttons", async ({ page }) => {
+  test("interval tab shows direction buttons and seq selector", async ({ page }) => {
     await page.goto("/");
     await page.click('[data-testid="nav-ear-trainer"]');
     await page.click('[data-testid="mode-interval"]');
     await expect(page.locator('[data-testid="direction-buttons"]')).toBeVisible();
     await expect(page.locator('[data-testid="dir-up"]')).toBeVisible();
     await expect(page.locator('[data-testid="dir-down"]')).toBeVisible();
+    await expect(page.locator('[data-testid="seq-length-selector"]')).toBeVisible();
+    await expect(page.locator('[data-testid="seq-len-2"]')).toBeVisible();
+    await expect(page.locator('[data-testid="seq-len-5"]')).toBeVisible();
     await expect(page.locator('[data-testid="piano-keyboard"]')).not.toBeVisible();
   });
 

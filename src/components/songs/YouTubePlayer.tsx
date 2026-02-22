@@ -172,13 +172,13 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
   return (
     <div className="space-y-2">
       {/* Player container */}
-      <div className="max-w-2xl aspect-video rounded-lg overflow-hidden bg-black">
+      <div className="aspect-video rounded-lg overflow-hidden bg-black">
         <div ref={containerRef} className="w-full h-full" />
       </div>
 
       {/* Controls toolbar */}
       {isReady && (
-        <div className="space-y-2 max-w-2xl" data-testid="player-controls">
+        <div className="space-y-2" data-testid="player-controls">
           {/* Row 1: Skip + Loop */}
           <div className="flex items-center gap-3 text-sm">
             <div className="flex items-center gap-1">

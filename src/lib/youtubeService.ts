@@ -8,6 +8,9 @@ export interface YouTubeSearchResult {
 export async function searchYouTube(query: string): Promise<YouTubeSearchResult[]> {
   const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
   if (!res.ok) {
+    if (res.status === 403) {
+      throw new Error("YouTube API quota exceeded. Try again tomorrow or paste a URL directly.");
+    }
     throw new Error("YouTube search failed");
   }
   const data = await res.json();
@@ -35,5 +38,5 @@ export function extractVideoId(input: string): string | null {
 }
 
 export function buildGuitarTabQuery(songName: string, artist: string): string {
-  return [songName, artist, "guitar tab"].filter(Boolean).join(" ");
+  return [songName, artist, "official video"].filter(Boolean).join(" ");
 }

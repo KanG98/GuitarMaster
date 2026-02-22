@@ -18,7 +18,7 @@ import {
   updatePracticeTime,
   updateSongVideo,
 } from "@/lib/fileService";
-import { searchYouTube, YouTubeSearchResult } from "@/lib/youtubeService";
+import { searchYouTube, YouTubeSearchResult, buildGuitarTabQuery } from "@/lib/youtubeService";
 
 interface SongDetailProps {
   song: SongRecord;
@@ -35,6 +35,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   const [videoId, setVideoId] = useState<string | null>(song.youtubeVideoId);
   const [isSearchingYouTube, setIsSearchingYouTube] = useState(false);
   const [youtubeResults, setYoutubeResults] = useState<YouTubeSearchResult[]>([]);
+  const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
 
   const handleBack = async () => {
@@ -60,6 +61,14 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Auto-search YouTube when entering a song with no video
+  useEffect(() => {
+    if (!song.youtubeVideoId) {
+      handleYouTubeSearch(buildGuitarTabQuery(song.name, song.artist));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song.id]);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
@@ -87,11 +96,12 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
 
   const handleYouTubeSearch = async (query: string) => {
     setIsSearchingYouTube(true);
+    setYoutubeError(null);
     try {
       const results = await searchYouTube(query);
       setYoutubeResults(results);
-    } catch {
-      // Search failure is non-critical
+    } catch (err) {
+      setYoutubeError(err instanceof Error ? err.message : "YouTube search failed");
     } finally {
       setIsSearchingYouTube(false);
     }
@@ -149,31 +159,85 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
         </div>
       </div>
 
-      <YouTubeSection
-        videoId={videoId}
-        songName={song.name}
-        artist={song.artist}
-        isSearching={isSearchingYouTube}
-        searchResults={youtubeResults}
-        onSearch={handleYouTubeSearch}
-        onSelectVideo={handleSelectVideo}
-        onRemoveVideo={handleRemoveVideo}
-      />
-
-      <UploadZone
-        onFileSelected={handleUpload}
-        isUploading={isUploading}
-        error={error}
-        compact={files.length > 0}
-      />
-
-      <FileGallery
-        files={files}
-        isLoading={isLoading}
-        onView={(_file, index) => setViewIndex(index - (index % 2))}
-        onDelete={handleDeleteFile}
-        onReorder={handleReorder}
-      />
+      {videoId ? (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+            <YouTubeSection
+              videoId={videoId}
+              songName={song.name}
+              artist={song.artist}
+              isSearching={isSearchingYouTube}
+              searchResults={youtubeResults}
+              searchError={youtubeError}
+              onSearch={handleYouTubeSearch}
+              onSelectVideo={handleSelectVideo}
+              onRemoveVideo={handleRemoveVideo}
+            />
+          </div>
+          <div className="lg:col-span-2">
+            {files.length === 0 && (
+              <UploadZone
+                onFileSelected={handleUpload}
+                isUploading={isUploading}
+                error={error}
+                compact={false}
+              />
+            )}
+            <FileGallery
+              files={files}
+              isLoading={isLoading}
+              onView={(_file, index) => setViewIndex(index - (index % 2))}
+              onDelete={handleDeleteFile}
+              onReorder={handleReorder}
+              uploadSlot={files.length > 0 && (
+                <UploadZone
+                  onFileSelected={handleUpload}
+                  isUploading={isUploading}
+                  error={error}
+                  compact
+                />
+              )}
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          <YouTubeSection
+            videoId={videoId}
+            songName={song.name}
+            artist={song.artist}
+            isSearching={isSearchingYouTube}
+            searchResults={youtubeResults}
+            searchError={youtubeError}
+            onSearch={handleYouTubeSearch}
+            onSelectVideo={handleSelectVideo}
+            onRemoveVideo={handleRemoveVideo}
+          />
+          {files.length === 0 && (
+            <UploadZone
+              onFileSelected={handleUpload}
+              isUploading={isUploading}
+              error={error}
+              compact={false}
+            />
+          )}
+          <FileGallery
+            files={files}
+            isLoading={isLoading}
+            onView={(_file, index) => setViewIndex(index - (index % 2))}
+            onDelete={handleDeleteFile}
+            onReorder={handleReorder}
+            uploadSlot={files.length > 0 && (
+              <UploadZone
+                onFileSelected={handleUpload}
+                isUploading={isUploading}
+                error={error}
+                compact
+              />
+            )}
+          />
+        </>
+      )}
     </div>
   );
 }
