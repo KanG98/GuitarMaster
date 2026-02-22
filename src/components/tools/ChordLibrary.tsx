@@ -12,11 +12,17 @@ import {
   ChordDefinition,
   NoteRoot,
   ChordQuality,
+  getPrimaryChords,
 } from "@/lib/chordData";
 
 type Mode = "browse" | "quiz";
 type QuizState = "idle" | "waiting" | "feedback";
 type QuizDirection = "nameToDiagram" | "diagramToName";
+
+interface ChordGroup {
+  name: string;
+  voicings: ChordDefinition[];
+}
 
 function shuffleArray<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -36,6 +42,7 @@ export function ChordLibrary() {
   const [filterQuality, setFilterQuality] = useState<ChordQuality | "all">("all");
 
   // Quiz state
+  const primaryChords = useMemo(() => getPrimaryChords(), []);
   const [quizDirection, setQuizDirection] = useState<QuizDirection>("nameToDiagram");
   const [quizState, setQuizState] = useState<QuizState>("idle");
   const [quizChord, setQuizChord] = useState<ChordDefinition | null>(null);
@@ -48,15 +55,35 @@ export function ChordLibrary() {
   const [feedback, setFeedback] = useState<{ type: "correct" | "wrong"; answer: string } | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filteredChords = useMemo(() => {
-    return CHORDS.filter((chord) => {
+  // Filter and group chords for browse
+  const filteredGroups = useMemo(() => {
+    const filtered = CHORDS.filter((chord) => {
       const rootMatch = filterRoot === "all" || chord.root === filterRoot;
       const qualityMatch = filterQuality === "all" || chord.quality === filterQuality;
       const searchMatch =
         !searchQuery || chord.name.toLowerCase().includes(searchQuery.toLowerCase());
       return rootMatch && qualityMatch && searchMatch;
     });
+
+    // Group by chord name, preserving order of first appearance
+    const groups: ChordGroup[] = [];
+    const groupMap = new Map<string, ChordGroup>();
+    for (const chord of filtered) {
+      let group = groupMap.get(chord.name);
+      if (!group) {
+        group = { name: chord.name, voicings: [] };
+        groupMap.set(chord.name, group);
+        groups.push(group);
+      }
+      group.voicings.push(chord);
+    }
+    return groups;
   }, [filterRoot, filterQuality, searchQuery]);
+
+  const totalChordCount = useMemo(
+    () => filteredGroups.reduce((sum, g) => sum + g.voicings.length, 0),
+    [filteredGroups]
+  );
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -65,16 +92,16 @@ export function ChordLibrary() {
   };
 
   const nextRound = useCallback(() => {
-    const shuffled = shuffleArray(CHORDS);
+    const shuffled = shuffleArray(primaryChords);
     const answer = shuffled[0];
-    const wrong = shuffled.slice(1, 4);
+    const wrong = shuffled.filter((c) => c.name !== answer.name).slice(0, 3);
     const options = shuffleArray([...wrong, answer]);
     setQuizChord(answer);
     setQuizOptions(options);
     setSelectedIndex(null);
     setFeedback(null);
     setQuizState("waiting");
-  }, []);
+  }, [primaryChords]);
 
   const startQuiz = useCallback(() => {
     setCorrect(0);
@@ -209,23 +236,38 @@ export function ChordLibrary() {
               </Button>
             )}
             <span className="text-sm text-muted-foreground ml-auto">
-              {filteredChords.length} chord{filteredChords.length !== 1 ? "s" : ""}
+              {filteredGroups.length} chord{filteredGroups.length !== 1 ? "s" : ""}
+              {totalChordCount !== filteredGroups.length && (
+                <span className="text-xs ml-1">({totalChordCount} voicings)</span>
+              )}
             </span>
           </div>
 
-          {/* Chord grid */}
-          {filteredChords.length > 0 ? (
-            <div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
-              data-testid="chord-grid"
-            >
-              {filteredChords.map((chord) => (
-                <div
-                  key={chord.id}
-                  className="flex flex-col items-center p-3 rounded-xl border bg-card hover:shadow-md transition-all"
-                  data-testid={`chord-card-${chord.id}`}
-                >
-                  <ChordDiagram chord={chord} size={100} />
+          {/* Chord groups */}
+          {filteredGroups.length > 0 ? (
+            <div className="space-y-6" data-testid="chord-grid">
+              {filteredGroups.map((group) => (
+                <div key={group.name} data-testid={`chord-group-${group.name}`}>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">
+                    {group.name}
+                    {group.voicings.length > 1 && (
+                      <span className="text-xs font-normal ml-2">
+                        {group.voicings.length} positions
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {group.voicings.map((chord) => (
+                      <div
+                        key={chord.id}
+                        className="flex flex-col items-center p-3 rounded-xl border bg-card hover:shadow-md transition-all shrink-0"
+                        data-testid={`chord-card-${chord.id}`}
+                      >
+                        <ChordDiagram chord={chord} size={100} />
+                        <p className="text-xs text-muted-foreground mt-1">{chord.position}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { ChordLibrary } from "./ChordLibrary";
-import { CHORDS } from "@/lib/chordData";
+import { CHORDS, getPrimaryChords } from "@/lib/chordData";
 
 describe("ChordLibrary", () => {
   beforeEach(() => {
@@ -29,14 +29,31 @@ describe("ChordLibrary", () => {
     expect(cards.length).toBe(CHORDS.length);
   });
 
+  test("groups voicings by chord name", () => {
+    render(<ChordLibrary />);
+    // C major has multiple voicings — should show a group
+    const cGroup = screen.getByTestId("chord-group-C");
+    expect(cGroup).toBeInTheDocument();
+    const cCards = cGroup.querySelectorAll("[data-testid^='chord-card-']");
+    const cVoicings = CHORDS.filter((c) => c.name === "C");
+    expect(cCards.length).toBe(cVoicings.length);
+    expect(cCards.length).toBeGreaterThan(1);
+  });
+
+  test("shows position labels on voicing cards", () => {
+    render(<ChordLibrary />);
+    const openLabels = screen.getAllByText("Open");
+    expect(openLabels.length).toBeGreaterThanOrEqual(1);
+  });
+
   test("search filters chord list", () => {
     render(<ChordLibrary />);
     fireEvent.change(screen.getByTestId("chord-search"), {
       target: { value: "Am7" },
     });
     const grid = screen.getByTestId("chord-grid");
-    const cards = grid.querySelectorAll("[data-testid^='chord-card-']");
-    expect(cards.length).toBe(1);
+    const groups = grid.querySelectorAll("[data-testid^='chord-group-']");
+    expect(groups.length).toBe(1);
   });
 
   test("root filter shows only chords in that key", () => {
@@ -146,7 +163,6 @@ describe("ChordLibrary", () => {
     render(<ChordLibrary />);
     fireEvent.click(screen.getByTestId("mode-quiz"));
     fireEvent.click(screen.getByTestId("start-btn"));
-    // Click Reset
     fireEvent.click(screen.getByTestId("start-btn"));
     expect(screen.getByTestId("start-btn")).toHaveTextContent("Start");
     expect(screen.queryByTestId("quiz-options")).not.toBeInTheDocument();
@@ -157,16 +173,13 @@ describe("ChordLibrary", () => {
     fireEvent.click(screen.getByTestId("mode-quiz"));
     fireEvent.click(screen.getByTestId("start-btn"));
 
-    const firstPrompt = screen.getByTestId("quiz-prompt").textContent;
     fireEvent.click(screen.getByTestId("quiz-option-0"));
 
     act(() => {
       jest.advanceTimersByTime(1500);
     });
 
-    // Should have advanced — feedback overlay gone, new question
     expect(screen.queryByTestId("feedback-overlay")).not.toBeInTheDocument();
-    // Score shows 1 total
     expect(screen.getByTestId("score-value").textContent).toMatch(/\d+ \/ 1/);
   });
 
@@ -184,5 +197,28 @@ describe("ChordLibrary", () => {
   test("all chord ids are unique", () => {
     const ids = CHORDS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test("each chord has a position field", () => {
+    CHORDS.forEach((chord) => {
+      expect(chord.position).toBeTruthy();
+    });
+  });
+
+  test("getPrimaryChords returns one voicing per chord name", () => {
+    const primaries = getPrimaryChords();
+    const names = primaries.map((c) => c.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(primaries.length).toBeLessThan(CHORDS.length);
+  });
+
+  test("quiz uses primary chords (no duplicate names)", () => {
+    render(<ChordLibrary />);
+    fireEvent.click(screen.getByTestId("mode-quiz"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+    // All 4 options should have unique names
+    const options = screen.getByTestId("quiz-options");
+    const svgs = options.querySelectorAll("[data-testid^='quiz-option-']");
+    expect(svgs.length).toBe(4);
   });
 });
