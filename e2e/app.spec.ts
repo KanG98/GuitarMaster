@@ -348,9 +348,8 @@ test.describe("YouTube Player Controls", () => {
     await expect(page.locator('button:has-text("1x")')).toBeVisible();
     await expect(page.locator('button:has-text("0.75x")')).toBeVisible();
 
-    // Verify loop buttons exist
-    await expect(page.locator('button[title="Set loop start"]')).toBeVisible();
-    await expect(page.locator('button[title="Set loop end"]')).toBeVisible();
+    // Verify loop slider exists
+    await expect(page.locator('[data-testid="loop-slider"]')).toBeVisible();
   });
 });
 

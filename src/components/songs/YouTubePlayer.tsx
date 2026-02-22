@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { SkipBack, SkipForward, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 interface YouTubePlayerProps {
   videoId: string;
@@ -47,6 +48,7 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [isReady, setIsReady] = useState(false);
+  const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [loopA, setLoopA] = useState<number | null>(null);
   const [loopB, setLoopB] = useState<number | null>(null);
@@ -74,8 +76,11 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
           modestbranding: 1,
         },
         events: {
-          onReady: () => {
-            if (!destroyed) setIsReady(true);
+          onReady: (event: YT.PlayerEvent) => {
+            if (!destroyed) {
+              setDuration(event.target.getDuration());
+              setIsReady(true);
+            }
           },
         },
       });
@@ -127,34 +132,11 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
     setPlaybackRate(rate);
   }, []);
 
-  const setPointA = useCallback(() => {
-    if (!playerRef.current) return;
-    const current = playerRef.current.getCurrentTime();
-    if (loopA !== null && Math.abs(loopA - current) < 1) {
-      // Clicking A again near the same point clears it
-      setLoopA(null);
-      setIsLooping(false);
-    } else {
-      setLoopA(current);
-      if (loopB !== null && current < loopB) {
-        setIsLooping(true);
-      }
-    }
-  }, [loopA, loopB]);
-
-  const setPointB = useCallback(() => {
-    if (!playerRef.current) return;
-    const current = playerRef.current.getCurrentTime();
-    if (loopB !== null && Math.abs(loopB - current) < 1) {
-      setLoopB(null);
-      setIsLooping(false);
-    } else {
-      setLoopB(current);
-      if (loopA !== null && loopA < current) {
-        setIsLooping(true);
-      }
-    }
-  }, [loopA, loopB]);
+  const handleLoopRange = useCallback((values: number[]) => {
+    setLoopA(values[0]);
+    setLoopB(values[1]);
+    setIsLooping(true);
+  }, []);
 
   const toggleLoop = useCallback(() => {
     if (loopA !== null && loopB !== null) {
@@ -207,25 +189,22 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
           <div className="w-px h-5 bg-border" />
 
           {/* A-B Loop controls */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant={loopA !== null ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 px-2 font-mono"
-              onClick={setPointA}
-              title={loopA !== null ? `A: ${formatTime(loopA)} (click to clear)` : "Set loop start"}
-            >
-              A{loopA !== null && <span className="ml-1 text-xs opacity-70">{formatTime(loopA)}</span>}
-            </Button>
-            <Button
-              variant={loopB !== null ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 px-2 font-mono"
-              onClick={setPointB}
-              title={loopB !== null ? `B: ${formatTime(loopB)} (click to clear)` : "Set loop end"}
-            >
-              B{loopB !== null && <span className="ml-1 text-xs opacity-70">{formatTime(loopB)}</span>}
-            </Button>
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <span className="text-xs font-mono text-muted-foreground w-10 text-right">
+              {formatTime(loopA ?? 0)}
+            </span>
+            <Slider
+              min={0}
+              max={Math.max(duration, 1)}
+              step={1}
+              value={[loopA ?? 0, loopB ?? duration]}
+              onValueChange={handleLoopRange}
+              className="flex-1"
+              data-testid="loop-slider"
+            />
+            <span className="text-xs font-mono text-muted-foreground w-10">
+              {formatTime(loopB ?? duration)}
+            </span>
             <Button
               variant={isLooping ? "secondary" : "ghost"}
               size="sm"

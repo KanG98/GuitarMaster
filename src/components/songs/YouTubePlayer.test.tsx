@@ -2,6 +2,13 @@ import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { formatTime } from "./YouTubePlayer";
 
+// Mock Radix Slider (doesn't work in jsdom)
+jest.mock("@/components/ui/slider", () => ({
+  Slider: (props: Record<string, unknown>) => (
+    <div data-testid={props["data-testid"] as string} data-slot="slider" />
+  ),
+}));
+
 // Mock YT.Player
 const mockSeekTo = jest.fn();
 const mockGetCurrentTime = jest.fn(() => 30);
@@ -10,12 +17,13 @@ const mockDestroy = jest.fn();
 
 let onReadyCallback: (() => void) | null = null;
 
+const mockGetDuration = jest.fn(() => 300);
+
 const MockPlayer = jest.fn().mockImplementation((_el: string, options: { events?: { onReady?: (e: { target: unknown; data: number }) => void } }) => {
-  onReadyCallback = () => options.events?.onReady?.({ target: {}, data: 0 });
-  return {
+  const player = {
     seekTo: mockSeekTo,
     getCurrentTime: mockGetCurrentTime,
-    getDuration: jest.fn(() => 300),
+    getDuration: mockGetDuration,
     setPlaybackRate: mockSetPlaybackRate,
     getPlaybackRate: jest.fn(() => 1),
     getPlayerState: jest.fn(() => 1),
@@ -24,6 +32,8 @@ const MockPlayer = jest.fn().mockImplementation((_el: string, options: { events?
     playVideo: jest.fn(),
     pauseVideo: jest.fn(),
   };
+  onReadyCallback = () => options.events?.onReady?.({ target: player, data: 0 });
+  return player;
 });
 
 beforeAll(() => {
@@ -111,22 +121,14 @@ describe("YouTubePlayer", () => {
     expect(mockSetPlaybackRate).toHaveBeenCalledWith(0.75);
   });
 
-  test("renders A-B loop buttons", async () => {
+  test("renders loop range slider", async () => {
     await renderAndReady();
-    expect(screen.getByTitle("Set loop start")).toBeInTheDocument();
-    expect(screen.getByTitle("Set loop end")).toBeInTheDocument();
+    expect(screen.getByTestId("loop-slider")).toBeInTheDocument();
   });
 
-  test("A button shows timestamp after click", async () => {
+  test("renders loop toggle button", async () => {
     await renderAndReady();
-    await userEvent.click(screen.getByTitle("Set loop start"));
-    expect(screen.getByText("0:30")).toBeInTheDocument();
-  });
-
-  test("loop toggle is disabled without both A and B", async () => {
-    await renderAndReady();
-    const loopBtn = screen.getByTitle("Enable loop");
-    expect(loopBtn).toBeDisabled();
+    expect(screen.getByTitle("Enable loop")).toBeInTheDocument();
   });
 
   test("destroys player on unmount", async () => {
