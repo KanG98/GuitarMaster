@@ -30,10 +30,11 @@ describe("EarTrainer", () => {
     expect(screen.getByText("B")).toBeInTheDocument();
   });
 
-  test("renders learn and quiz mode tabs", () => {
+  test("renders learn, quiz, and interval mode tabs", () => {
     render(<EarTrainer />);
     expect(screen.getByTestId("mode-learn")).toBeInTheDocument();
     expect(screen.getByTestId("mode-quiz")).toBeInTheDocument();
+    expect(screen.getByTestId("mode-interval")).toBeInTheDocument();
   });
 
   test("starts in learn mode with hint text", () => {
@@ -123,5 +124,73 @@ describe("EarTrainer", () => {
 
     expect(screen.getByTestId("start-btn")).toHaveTextContent("Start");
     expect(screen.getByTestId("quiz-prompt")).toHaveTextContent('Click "Start" to begin!');
+  });
+
+  // --- Interval Direction Mode ---
+  test("interval: switching shows direction buttons", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    expect(screen.getByTestId("direction-buttons")).toBeInTheDocument();
+    expect(screen.getByTestId("dir-up")).toBeInTheDocument();
+    expect(screen.getByTestId("dir-down")).toBeInTheDocument();
+    // Piano keyboard should not be visible
+    expect(screen.queryByTestId("piano-keyboard")).not.toBeInTheDocument();
+  });
+
+  test("interval: Start plays two notes", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    // First note played immediately
+    expect(mockPlayNote).toHaveBeenCalledTimes(1);
+
+    // Second note after 600ms
+    act(() => { jest.advanceTimersByTime(600); });
+    expect(mockPlayNote).toHaveBeenCalledTimes(2);
+  });
+
+  test("interval: correct direction answer updates score", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    // Wait for both notes + waiting state
+    act(() => { jest.advanceTimersByTime(1200); });
+
+    // Determine correct direction from played notes
+    const note1 = mockPlayNote.mock.calls[0][0];
+    const note2 = mockPlayNote.mock.calls[1][0];
+    const notes = ["C", "D", "E", "F", "G", "A", "B"];
+    const correctDir = notes.indexOf(note2) > notes.indexOf(note1) ? "up" : "down";
+
+    fireEvent.click(screen.getByTestId(`dir-${correctDir}`));
+
+    expect(screen.getByTestId("score-value")).toHaveTextContent("1 / 1");
+    expect(screen.getByTestId("streak-value")).toHaveTextContent("1");
+  });
+
+  test("interval: feedback overlay appears on answer", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    act(() => { jest.advanceTimersByTime(1200); });
+
+    const note1 = mockPlayNote.mock.calls[0][0];
+    const note2 = mockPlayNote.mock.calls[1][0];
+    const notes = ["C", "D", "E", "F", "G", "A", "B"];
+    const correctDir = notes.indexOf(note2) > notes.indexOf(note1) ? "up" : "down";
+
+    fireEvent.click(screen.getByTestId(`dir-${correctDir}`));
+
+    expect(screen.getByTestId("feedback-overlay")).toBeInTheDocument();
+    expect(screen.getByText("Correct!")).toBeInTheDocument();
+  });
+
+  test("interval: shows arrow keyboard hint", () => {
+    render(<EarTrainer />);
+    fireEvent.click(screen.getByTestId("mode-interval"));
+    expect(screen.getByText(/arrows to answer/)).toBeInTheDocument();
   });
 });

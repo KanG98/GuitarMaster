@@ -408,6 +408,28 @@ test.describe("Ear Trainer", () => {
     await page.click('[data-testid="nav-songs"]');
     await expect(page.locator("text=Your Songs")).toBeVisible();
   });
+
+  test("interval tab shows direction buttons", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await page.click('[data-testid="mode-interval"]');
+    await expect(page.locator('[data-testid="direction-buttons"]')).toBeVisible();
+    await expect(page.locator('[data-testid="dir-up"]')).toBeVisible();
+    await expect(page.locator('[data-testid="dir-down"]')).toBeVisible();
+    await expect(page.locator('[data-testid="piano-keyboard"]')).not.toBeVisible();
+  });
+
+  test("interval quiz start and reset flow", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-ear-trainer"]');
+    await page.click('[data-testid="mode-interval"]');
+
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Reset");
+
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Start");
+  });
 });
 
 // --- Cleanup: runs last, removes only [E2E]-prefixed songs ---
