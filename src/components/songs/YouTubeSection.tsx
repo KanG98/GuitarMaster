@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Youtube, Search, Link, X, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { YouTubeSearchResult, extractVideoId, buildGuitarTabQuery } from "@/lib/youtubeService";
+import { YouTubePlayer } from "./YouTubePlayer";
 
 interface YouTubeSectionProps {
   videoId: string | null;
@@ -85,13 +86,7 @@ export function YouTubeSection({
             Edit
           </Button>
         </div>
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}`}
-          title="YouTube video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="w-full aspect-video rounded-lg"
-        />
+        <YouTubePlayer videoId={videoId} />
       </div>
     );
   }

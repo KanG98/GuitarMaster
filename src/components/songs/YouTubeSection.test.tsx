@@ -2,6 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { YouTubeSection } from "./YouTubeSection";
 
+// Mock YouTubePlayer since it requires the YouTube IFrame API
+jest.mock("./YouTubePlayer", () => ({
+  YouTubePlayer: ({ videoId }: { videoId: string }) => (
+    <div data-testid="youtube-player" data-video-id={videoId}>
+      Mocked Player
+    </div>
+  ),
+}));
+
 const defaultProps = {
   videoId: null as string | null,
   songName: "Hotel California",
@@ -27,11 +36,11 @@ describe("YouTubeSection", () => {
     expect(screen.getByText("Searching YouTube...")).toBeInTheDocument();
   });
 
-  test("renders embedded player when videoId is provided", () => {
+  test("renders player when videoId is provided", () => {
     render(<YouTubeSection {...defaultProps} videoId="dQw4w9WgXcQ" />);
-    const iframe = screen.getByTitle("YouTube video");
-    expect(iframe).toBeInTheDocument();
-    expect(iframe).toHaveAttribute("src", "https://www.youtube.com/embed/dQw4w9WgXcQ");
+    const player = screen.getByTestId("youtube-player");
+    expect(player).toBeInTheDocument();
+    expect(player).toHaveAttribute("data-video-id", "dQw4w9WgXcQ");
   });
 
   test("shows edit button when video is present", () => {
