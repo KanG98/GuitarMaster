@@ -109,19 +109,16 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
     await updateSongVideo(song.id, null);
   };
 
-  if (viewIndex !== null) {
-    return (
-      <FileViewer
-        files={files}
-        currentIndex={viewIndex}
-        onNavigate={setViewIndex}
-        onClose={() => setViewIndex(null)}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
+      {viewIndex !== null && (
+        <FileViewer
+          files={files}
+          currentIndex={viewIndex}
+          onNavigate={setViewIndex}
+          onClose={() => setViewIndex(null)}
+        />
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={handleBack}>
