@@ -5,6 +5,7 @@ import { Header, ToolName } from "@/components/shared/Header";
 import { SongList } from "@/components/songs/SongList";
 import { SongDetail } from "@/components/songs/SongDetail";
 import { EarTrainer } from "@/components/tools/EarTrainer";
+import { ChordLibrary } from "@/components/tools/ChordLibrary";
 import { useSongManager } from "@/hooks/useTabParser";
 import { SongRecord } from "@/lib/fileService";
 
@@ -45,6 +46,7 @@ export default function Home() {
           </>
         )}
         {currentTool === "earTrainer" && <EarTrainer />}
+        {currentTool === "chordLibrary" && <ChordLibrary />}
       </main>
     </div>
   );

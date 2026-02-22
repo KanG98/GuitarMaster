@@ -435,6 +435,106 @@ test.describe("Ear Trainer", () => {
   });
 });
 
+// --- Chord Library ---
+test.describe("Chord Library", () => {
+  test("chord library tab is visible in header", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('[data-testid="nav-chord-library"]')).toBeVisible();
+  });
+
+  test("clicking chord library tab shows chord grid", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await expect(page.locator('[data-testid="chord-grid"]')).toBeVisible();
+  });
+
+  test("chord grid shows multiple chord diagrams", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    const cards = page.locator('[data-testid^="chord-card-"]');
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(50);
+  });
+
+  test("search input filters chords", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.fill('[data-testid="chord-search"]', "Am7");
+    const cards = page.locator('[data-testid^="chord-card-"]');
+    await expect(cards).toHaveCount(1);
+  });
+
+  test("root filter narrows chord list", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.selectOption('[data-testid="filter-root"]', "E");
+    const cards = page.locator('[data-testid^="chord-card-"]');
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBeLessThan(56);
+  });
+
+  test("quality filter shows only that chord type", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.selectOption('[data-testid="filter-quality"]', "dim");
+    const cards = page.locator('[data-testid^="chord-card-"]');
+    await expect(cards).toHaveCount(5);
+  });
+
+  test("can switch to quiz mode", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await expect(page.locator('[data-testid="quiz-panel"]')).toBeVisible();
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Start");
+  });
+
+  test("quiz direction toggle is visible", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await expect(page.locator('[data-testid="dir-name-to-diagram"]')).toBeVisible();
+    await expect(page.locator('[data-testid="dir-diagram-to-name"]')).toBeVisible();
+  });
+
+  test("quiz start shows 4 options", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="quiz-options"]')).toBeVisible();
+    await expect(page.locator('[data-testid="quiz-option-0"]')).toBeVisible();
+    await expect(page.locator('[data-testid="quiz-option-3"]')).toBeVisible();
+  });
+
+  test("clicking a quiz option shows feedback", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await page.click('[data-testid="start-btn"]');
+    await page.click('[data-testid="quiz-option-0"]');
+    await expect(page.locator('[data-testid="feedback-overlay"]')).toBeVisible();
+  });
+
+  test("quiz start/reset flow works", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="mode-quiz"]');
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Reset");
+    await page.click('[data-testid="start-btn"]');
+    await expect(page.locator('[data-testid="start-btn"]')).toContainText("Start");
+  });
+
+  test("can switch back to songs view from chord library", async ({ page }) => {
+    await page.goto("/");
+    await page.click('[data-testid="nav-chord-library"]');
+    await page.click('[data-testid="nav-songs"]');
+    await expect(page.locator("text=Your Songs")).toBeVisible();
+  });
+});
+
 // --- Cleanup: runs last, removes only [E2E]-prefixed songs ---
 test.describe("Cleanup", () => {
   test("delete all E2E test songs from database", async ({ page }) => {
