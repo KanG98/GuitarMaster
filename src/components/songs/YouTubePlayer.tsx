@@ -173,7 +173,7 @@ export function YouTubePlayer({ videoId }: YouTubePlayerProps) {
   return (
     <div className="space-y-2">
       {/* Player container */}
-      <div className="w-full aspect-video rounded-lg overflow-hidden bg-black">
+      <div className="max-w-2xl aspect-video rounded-lg overflow-hidden bg-black">
         <div ref={containerRef} className="w-full h-full" />
       </div>
 
