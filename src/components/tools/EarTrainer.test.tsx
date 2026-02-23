@@ -180,7 +180,7 @@ describe("EarTrainer", () => {
     expect(screen.getByTestId("streak-value")).toHaveTextContent("1");
   });
 
-  test("interval: feedback overlay appears on answer", () => {
+  test("interval: feedback panel shows notes and next button on answer", () => {
     render(<EarTrainer />);
     fireEvent.click(screen.getByTestId("mode-interval"));
     fireEvent.click(screen.getByTestId("start-btn"));
@@ -194,8 +194,10 @@ describe("EarTrainer", () => {
 
     fireEvent.click(screen.getByTestId(`dir-${correctDir}`));
 
-    expect(screen.getByTestId("feedback-overlay")).toBeInTheDocument();
+    expect(screen.getByTestId("interval-feedback")).toBeInTheDocument();
     expect(screen.getByText("Correct!")).toBeInTheDocument();
+    expect(screen.getByText(`Notes: ${note1} → ${note2}`)).toBeInTheDocument();
+    expect(screen.getByTestId("next-btn")).toBeInTheDocument();
   });
 
   test("interval: shows arrow keyboard hint", () => {

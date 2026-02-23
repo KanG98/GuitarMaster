@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Play, RotateCcw, Volume2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Play, RotateCcw, Volume2, ArrowUp, ArrowDown, ArrowUpDown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playNote, NOTES, NoteName } from "@/lib/audioEngine";
 
@@ -60,6 +60,7 @@ export function EarTrainer() {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [flashKeys, setFlashKeys] = useState<Record<string, "correct" | "wrong">>({});
   const [directionFlash, setDirectionFlash] = useState<{ dir: Direction; type: "correct" | "wrong" } | null>(null);
+  const [intervalResult, setIntervalResult] = useState<{ isCorrect: boolean; notes: NoteName[]; correctDirs: Direction[] } | null>(null);
 
   const quizStateRef = useRef(quizState);
   const currentNoteRef = useRef(currentNote);
@@ -126,6 +127,7 @@ export function EarTrainer() {
     setCurrentNote(null);
     setNoteSequence([]);
     setAnswers([]);
+    setIntervalResult(null);
   }, []);
 
   const replay = useCallback(() => {
@@ -174,6 +176,7 @@ export function EarTrainer() {
   const nextIntervalRound = useCallback(() => {
     setQuizState("playing");
     setAnswers([]);
+    setIntervalResult(null);
     const seq = pickNoteSequence(seqLengthRef.current);
     setNoteSequence(seq);
     playNoteSequence(seq);
@@ -194,7 +197,7 @@ export function EarTrainer() {
   }, [nextIntervalRound]);
 
   const replayInterval = useCallback(() => {
-    if (quizStateRef.current === "waiting" && noteSequenceRef.current.length > 0) {
+    if ((quizStateRef.current === "waiting" || quizStateRef.current === "feedback") && noteSequenceRef.current.length > 0) {
       playNoteSequence(noteSequenceRef.current);
     }
   }, [playNoteSequence]);
@@ -232,13 +235,8 @@ export function EarTrainer() {
       flashDirection(direction, "wrong");
     }
 
-    const correctLabel = correctDirs.map((d) => (d === "up" ? "↑" : "↓")).join(" ");
-    showFeedback(isCorrect, correctLabel);
-
-    setTimeout(() => {
-      nextIntervalRound();
-    }, 1200);
-  }, [flashDirection, showFeedback, nextIntervalRound]);
+    setIntervalResult({ isCorrect, notes: [...noteSequenceRef.current], correctDirs });
+  }, [flashDirection]);
 
   const handleKeyClick = useCallback((note: NoteName) => {
     if (modeRef.current === "learn") {
@@ -495,11 +493,55 @@ export function EarTrainer() {
               ))}
             </div>
           )}
+
+          {/* Interval feedback panel */}
+          {intervalResult && quizState === "feedback" && (
+            <div
+              className={`rounded-lg p-4 space-y-3 text-center ${
+                intervalResult.isCorrect
+                  ? "bg-emerald-100 dark:bg-emerald-950/30"
+                  : "bg-red-100 dark:bg-red-950/30"
+              }`}
+              data-testid="interval-feedback"
+            >
+              <p className={`text-lg font-bold ${
+                intervalResult.isCorrect ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+              }`}>
+                {intervalResult.isCorrect ? "Correct!" : "Wrong!"}
+              </p>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Notes: {intervalResult.notes.join(" → ")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Directions: {intervalResult.correctDirs.map((d) => d === "up" ? "↑" : "↓").join(" ")}
+                </p>
+              </div>
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={replayInterval}
+                  data-testid="feedback-replay-btn"
+                >
+                  <Volume2 className="h-3 w-3 mr-1" /> Replay
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={nextIntervalRound}
+                  data-testid="next-btn"
+                >
+                  Next
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Feedback Overlay */}
-      {feedback && (
+      {/* Feedback Overlay (note quiz only) */}
+      {feedback && mode !== "interval" && (
         <div
           className="fixed inset-0 flex items-center justify-center pointer-events-none z-50"
           data-testid="feedback-overlay"
