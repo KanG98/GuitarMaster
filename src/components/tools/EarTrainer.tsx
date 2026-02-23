@@ -494,6 +494,34 @@ export function EarTrainer() {
             </div>
           )}
 
+          {/* Piano Keyboard (interval mode - for reference) */}
+          <div className="flex gap-1.5" data-testid="interval-keyboard">
+            {NOTES.map((note) => {
+              const isActive = activeKey === note;
+              // During feedback, highlight notes that were in the sequence
+              const inSequence = intervalResult && quizState === "feedback" && intervalResult.notes.includes(note);
+
+              let bgClass = "bg-white hover:bg-gray-100 text-gray-900";
+              if (inSequence) bgClass = "bg-primary/30 text-gray-900 border-primary";
+              else if (isActive) bgClass = "bg-gray-200 text-gray-900";
+
+              return (
+                <button
+                  key={note}
+                  data-note={note}
+                  onClick={() => { playNote(note); highlightKey(note); }}
+                  className={`flex-1 h-28 rounded-lg border-2 border-gray-300 text-lg font-bold
+                    transition-all duration-100 shadow-md
+                    ${bgClass}
+                    active:translate-y-0.5 active:shadow-sm cursor-pointer
+                  `}
+                >
+                  {note}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Interval feedback panel */}
           {intervalResult && quizState === "feedback" && (
             <div
