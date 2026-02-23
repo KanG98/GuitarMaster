@@ -30,6 +30,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const [videoId, setVideoId] = useState<string | null>(song.youtubeVideoId);
@@ -71,16 +72,26 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song.id]);
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (selectedFiles: File[]) => {
     setIsUploading(true);
     setError(null);
-    try {
-      const record = await uploadFile(song.id, file);
-      setFiles((prev) => [...prev, record]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload file");
-    } finally {
-      setIsUploading(false);
+    setUploadProgress(selectedFiles.length > 1 ? `Uploading 1 / ${selectedFiles.length}...` : "");
+    const errors: string[] = [];
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (selectedFiles.length > 1) {
+        setUploadProgress(`Uploading ${i + 1} / ${selectedFiles.length}...`);
+      }
+      try {
+        const record = await uploadFile(song.id, selectedFiles[i]);
+        setFiles((prev) => [...prev, record]);
+      } catch (err) {
+        errors.push(`${selectedFiles[i].name}: ${err instanceof Error ? err.message : "failed"}`);
+      }
+    }
+    setIsUploading(false);
+    setUploadProgress("");
+    if (errors.length > 0) {
+      setError(`Failed to upload: ${errors.join(", ")}`);
     }
   };
 
@@ -179,8 +190,9 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           <div className="lg:col-span-2">
             {files.length === 0 && (
               <UploadZone
-                onFileSelected={handleUpload}
+                onFilesSelected={handleUpload}
                 isUploading={isUploading}
+                uploadProgress={uploadProgress}
                 error={error}
                 compact={false}
               />
@@ -193,8 +205,9 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
               onReorder={handleReorder}
               uploadSlot={files.length > 0 && (
                 <UploadZone
-                  onFileSelected={handleUpload}
+                  onFilesSelected={handleUpload}
                   isUploading={isUploading}
+                  uploadProgress={uploadProgress}
                   error={error}
                   compact
                 />
@@ -218,8 +231,9 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           />
           {files.length === 0 && (
             <UploadZone
-              onFileSelected={handleUpload}
+              onFilesSelected={handleUpload}
               isUploading={isUploading}
+              uploadProgress={uploadProgress}
               error={error}
               compact={false}
             />
@@ -232,8 +246,9 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
             onReorder={handleReorder}
             uploadSlot={files.length > 0 && (
               <UploadZone
-                onFileSelected={handleUpload}
+                onFilesSelected={handleUpload}
                 isUploading={isUploading}
+                uploadProgress={uploadProgress}
                 error={error}
                 compact
               />

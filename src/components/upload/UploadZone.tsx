@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface UploadZoneProps {
-  onFileSelected: (file: File) => void;
+  onFilesSelected: (files: File[]) => void;
   isUploading: boolean;
+  uploadProgress?: string;
   error: string | null;
   compact?: boolean;
 }
@@ -22,32 +23,30 @@ const ACCEPTED_TYPES = [
 ];
 
 export function UploadZone({
-  onFileSelected,
+  onFilesSelected,
   isUploading,
+  uploadProgress,
   error,
   compact = false,
 }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(
-    (file: File) => {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
-        return;
-      }
-      onFileSelected(file);
+  const handleFiles = useCallback(
+    (fileList: FileList) => {
+      const valid = Array.from(fileList).filter((f) => ACCEPTED_TYPES.includes(f.type));
+      if (valid.length > 0) onFilesSelected(valid);
     },
-    [onFileSelected]
+    [onFilesSelected]
   );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file) handleFile(file);
+      if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
     },
-    [handleFile]
+    [handleFiles]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -62,11 +61,10 @@ export function UploadZone({
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
+      if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [handleFile]
+    [handleFiles]
   );
 
   if (compact) {
@@ -94,7 +92,7 @@ export function UploadZone({
           </div>
           <CardContent className="p-3">
             <p className="font-medium text-sm text-center">
-              {isUploading ? "Uploading..." : "Add File"}
+              {isUploading ? (uploadProgress || "Uploading...") : "Add Files"}
             </p>
           </CardContent>
         </Card>
@@ -109,6 +107,7 @@ export function UploadZone({
           ref={fileInputRef}
           type="file"
           accept=".png,.jpg,.jpeg,.webp,.gif,.pdf"
+          multiple
           className="hidden"
           onChange={handleInputChange}
         />
@@ -134,9 +133,9 @@ export function UploadZone({
             <>
               <div className="h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
               <div className="text-center space-y-1">
-                <p className="font-medium">Uploading...</p>
+                <p className="font-medium">{uploadProgress || "Uploading..."}</p>
                 <p className="text-sm text-muted-foreground">
-                  Saving your file
+                  Saving your files
                 </p>
               </div>
             </>
@@ -147,7 +146,7 @@ export function UploadZone({
               </div>
               <div className="text-center space-y-1">
                 <p className="font-medium">
-                  Drag & drop your guitar tab here
+                  Drag & drop your guitar tabs here
                 </p>
                 <p className="text-sm text-muted-foreground">
                   or click to browse files
@@ -178,6 +177,7 @@ export function UploadZone({
         ref={fileInputRef}
         type="file"
         accept=".png,.jpg,.jpeg,.webp,.gif,.pdf"
+        multiple
         className="hidden"
         onChange={handleInputChange}
       />

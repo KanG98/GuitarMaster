@@ -130,7 +130,7 @@ test.describe("Song Detail", () => {
     await firstCard.click();
 
     await expect(
-      page.locator("text=Drag & drop your guitar tab here")
+      page.locator("text=Drag & drop your guitar tabs here")
     ).toBeVisible();
   });
 });
