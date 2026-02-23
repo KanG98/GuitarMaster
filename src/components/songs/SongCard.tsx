@@ -28,9 +28,17 @@ export function SongCard({ song, onClick, onDelete }: SongCardProps) {
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
-              <Music className="h-5 w-5 text-primary" />
-            </div>
+            {song.youtubeVideoId ? (
+              <img
+                src={`https://img.youtube.com/vi/${song.youtubeVideoId}/mqdefault.jpg`}
+                alt={song.name}
+                className="h-10 w-10 rounded-lg object-cover shrink-0"
+              />
+            ) : (
+              <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
+                <Music className="h-5 w-5 text-primary" />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="font-semibold truncate" title={song.name}>
                 {song.name}
