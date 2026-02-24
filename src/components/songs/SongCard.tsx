@@ -32,7 +32,7 @@ export function SongCard({ song, onClick, onDelete }: SongCardProps) {
               <img
                 src={`https://img.youtube.com/vi/${song.youtubeVideoId}/mqdefault.jpg`}
                 alt={song.name}
-                className="h-10 w-10 rounded-lg object-cover shrink-0"
+                className="h-16 w-16 rounded-lg object-cover shrink-0"
               />
             ) : (
               <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
