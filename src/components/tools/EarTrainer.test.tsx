@@ -4,6 +4,7 @@ import { EarTrainer } from "./EarTrainer";
 // Mock audio engine
 jest.mock("@/lib/audioEngine", () => ({
   playNote: jest.fn(),
+  ensureAudioReady: jest.fn(),
   NOTES: ["C", "D", "E", "F", "G", "A", "B"] as const,
 }));
 

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Play, RotateCcw, Volume2, ArrowUp, ArrowDown, ArrowUpDown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { playNote, NOTES, NoteName } from "@/lib/audioEngine";
+import { playNote, ensureAudioReady, NOTES, NoteName } from "@/lib/audioEngine";
 
 type Mode = "learn" | "quiz" | "interval";
 type QuizState = "idle" | "playing" | "waiting" | "feedback";
@@ -61,6 +61,11 @@ export function EarTrainer() {
   const [flashKeys, setFlashKeys] = useState<Record<string, "correct" | "wrong">>({});
   const [directionFlash, setDirectionFlash] = useState<{ dir: Direction; type: "correct" | "wrong" } | null>(null);
   const [intervalResult, setIntervalResult] = useState<{ isCorrect: boolean; notes: NoteName[]; correctDirs: Direction[] } | null>(null);
+
+  // Unlock audio context on mount (mobile browsers require user gesture)
+  useEffect(() => {
+    ensureAudioReady();
+  }, []);
 
   const quizStateRef = useRef(quizState);
   const currentNoteRef = useRef(currentNote);
@@ -350,6 +355,7 @@ export function EarTrainer() {
               size="sm"
               onClick={quizState === "idle" ? (mode === "interval" ? startInterval : startQuiz) : resetQuiz}
               data-testid="start-btn"
+              className="active:scale-90 transition-transform duration-150"
             >
               {quizState === "idle" ? (
                 <><Play className="h-3 w-3 mr-1" /> Start</>
@@ -363,6 +369,7 @@ export function EarTrainer() {
               disabled={quizState !== "waiting"}
               onClick={mode === "interval" ? replayInterval : replay}
               data-testid="replay-btn"
+              className="active:scale-90 transition-transform duration-150"
             >
               <Volume2 className="h-3 w-3 mr-1" /> Replay
             </Button>
@@ -551,6 +558,7 @@ export function EarTrainer() {
                   size="sm"
                   onClick={replayInterval}
                   data-testid="feedback-replay-btn"
+                  className="active:scale-90 transition-transform duration-150"
                 >
                   <Volume2 className="h-3 w-3 mr-1" /> Replay
                 </Button>
@@ -558,6 +566,7 @@ export function EarTrainer() {
                   size="sm"
                   onClick={nextIntervalRound}
                   data-testid="next-btn"
+                  className="active:scale-90 transition-transform duration-150"
                 >
                   Next
                   <ArrowRight className="h-3 w-3 ml-1" />

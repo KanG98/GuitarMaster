@@ -86,7 +86,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
               setIsReady(true);
             }
           },
-          onStateChange: (event: YT.OnStateChangeEvent) => {
+          onStateChange: (event: YT.PlayerEvent) => {
             if (!destroyed) {
               onPlayingChange?.(event.data === YT.PlayerState.PLAYING);
             }

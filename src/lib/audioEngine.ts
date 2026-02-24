@@ -24,16 +24,49 @@ const ENVELOPE = {
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let unlocked = false;
 
 function init() {
   if (ctx) {
     if (ctx.state === "suspended") ctx.resume();
     return;
   }
-  ctx = new AudioContext();
+  // Use webkitAudioContext for older Safari
+  const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  ctx = new AudioCtx();
   masterGain = ctx.createGain();
   masterGain.gain.value = 0.5;
   masterGain.connect(ctx.destination);
+
+  // Mobile unlock: play a silent buffer on first interaction to unlock audio
+  if (!unlocked) {
+    const unlock = () => {
+      if (unlocked) return;
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume();
+      }
+      // Play a tiny silent buffer to unlock on iOS/Safari
+      if (ctx) {
+        const buffer = ctx.createBuffer(1, 1, 22050);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start(0);
+      }
+      unlocked = true;
+      document.removeEventListener("touchstart", unlock);
+      document.removeEventListener("touchend", unlock);
+      document.removeEventListener("click", unlock);
+    };
+    document.addEventListener("touchstart", unlock, { passive: true });
+    document.addEventListener("touchend", unlock, { passive: true });
+    document.addEventListener("click", unlock, { passive: true });
+  }
+}
+
+/** Call early (e.g. on component mount) to unlock AudioContext on mobile */
+export function ensureAudioReady(): void {
+  init();
 }
 
 export function playNote(noteName: string): void {
