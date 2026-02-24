@@ -216,99 +216,105 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
 
             <div className="w-px h-5 bg-border" />
 
-            <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
-              <button
-                onClick={() => {
-                  if (!playerRef.current) return;
-                  const t = Math.floor(playerRef.current.getCurrentTime());
-                  const b = loopB ?? duration;
-                  if (t < b) handleLoopRange([t, b]);
-                }}
-                className="h-5 px-1.5 text-[10px] font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
-                title="Set loop start to current position"
-                data-testid="set-loop-a"
-              >
-                A
-              </button>
-              <span className="text-xs font-mono text-muted-foreground w-10 text-right">
-                {formatTime(loopA ?? 0)}
-              </span>
-              <Slider
-                min={0}
-                max={Math.max(duration, 1)}
-                step={1}
-                value={[loopA ?? 0, loopB ?? duration]}
-                onValueChange={handleLoopRange}
-                className="flex-1"
-                data-testid="loop-slider"
-              />
-              <span className="text-xs font-mono text-muted-foreground w-10">
-                {formatTime(loopB ?? duration)}
-              </span>
-              <button
-                onClick={() => {
-                  if (!playerRef.current) return;
-                  const t = Math.floor(playerRef.current.getCurrentTime());
-                  const a = loopA ?? 0;
-                  if (t > a) handleLoopRange([a, t]);
-                }}
-                className="h-5 px-1.5 text-[10px] font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
-                title="Set loop end to current position"
-                data-testid="set-loop-b"
-              >
-                B
-              </button>
-              <Button
-                variant={isLooping ? "secondary" : "ghost"}
-                size="sm"
-                className={`h-7 px-2 ${isLooping ? "text-primary" : ""}`}
-                onClick={toggleLoop}
-                disabled={!hasLoop}
-                title={isLooping ? "Disable loop" : "Enable loop"}
-              >
-                <Repeat className="h-3 w-3" />
-              </Button>
-              {hasLoop && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-1 text-xs text-muted-foreground"
-                  onClick={clearLoop}
-                  title="Clear loop points"
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              {/* Slider row */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-muted-foreground w-10 text-right shrink-0">
+                  {formatTime(loopA ?? 0)}
+                </span>
+                <Slider
+                  min={0}
+                  max={Math.max(duration, 1)}
+                  step={1}
+                  value={[loopA ?? 0, loopB ?? duration]}
+                  onValueChange={handleLoopRange}
+                  className="flex-1"
+                  data-testid="loop-slider"
+                />
+                <span className="text-xs font-mono text-muted-foreground w-10 shrink-0">
+                  {formatTime(loopB ?? duration)}
+                </span>
+              </div>
+              {/* Controls row */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => {
+                    if (!playerRef.current) return;
+                    const t = Math.floor(playerRef.current.getCurrentTime());
+                    const b = loopB ?? duration;
+                    if (t < b) handleLoopRange([t, b]);
+                  }}
+                  className="h-7 px-2.5 text-xs font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+                  title="Set loop start to current position"
+                  data-testid="set-loop-a"
                 >
-                  Clear
-                </Button>
-              )}
-              <div className="relative ml-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  onClick={() => setShowSettings((s) => !s)}
-                  title="Settings"
-                  data-testid="settings-btn"
+                  Set A
+                </button>
+                <button
+                  onClick={() => {
+                    if (!playerRef.current) return;
+                    const t = Math.floor(playerRef.current.getCurrentTime());
+                    const a = loopA ?? 0;
+                    if (t > a) handleLoopRange([a, t]);
+                  }}
+                  className="h-7 px-2.5 text-xs font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
+                  title="Set loop end to current position"
+                  data-testid="set-loop-b"
                 >
-                  <Settings className="h-3.5 w-3.5" />
+                  Set B
+                </button>
+                <Button
+                  variant={isLooping ? "secondary" : "ghost"}
+                  size="sm"
+                  className={`h-7 px-2 ${isLooping ? "text-primary" : ""}`}
+                  onClick={toggleLoop}
+                  disabled={!hasLoop}
+                  title={isLooping ? "Disable loop" : "Enable loop"}
+                >
+                  <Repeat className="h-3 w-3" />
                 </Button>
-                {showSettings && (
-                  <div className="absolute right-0 top-full mt-1 z-10 rounded-lg border bg-popover p-3 shadow-md" data-testid="settings-popover">
-                    <label className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground whitespace-nowrap">Skip (seconds)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={120}
-                        value={skipAmount}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value, 10);
-                          if (v >= 1 && v <= 120) setSkipAmount(v);
-                        }}
-                        className="w-16 text-sm border rounded px-2 py-1 bg-background outline-none focus:ring-1 focus:ring-primary"
-                        data-testid="skip-amount-input"
-                      />
-                    </label>
-                  </div>
+                {hasLoop && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={clearLoop}
+                    title="Clear loop points"
+                  >
+                    Clear
+                  </Button>
                 )}
+                <div className="relative ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => setShowSettings((s) => !s)}
+                    title="Settings"
+                    data-testid="settings-btn"
+                  >
+                    <Settings className="h-3.5 w-3.5" />
+                  </Button>
+                  {showSettings && (
+                    <div className="absolute right-0 top-full mt-1 z-10 rounded-lg border bg-popover p-3 shadow-md" data-testid="settings-popover">
+                      <label className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground whitespace-nowrap">Skip (seconds)</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={skipAmount}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            if (v >= 1 && v <= 120) setSkipAmount(v);
+                          }}
+                          className="w-16 text-sm border rounded px-2 py-1 bg-background outline-none focus:ring-1 focus:ring-primary"
+                          data-testid="skip-amount-input"
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
