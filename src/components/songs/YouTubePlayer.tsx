@@ -58,6 +58,19 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
   const [skipAmount, setSkipAmount] = useState(5);
   const [skipInputValue, setSkipInputValue] = useState("5");
   const [showSettings, setShowSettings] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Close settings on outside click
+  useEffect(() => {
+    if (!showSettings) return;
+    const handler = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showSettings]);
 
   // Initialize player
   useEffect(() => {
@@ -285,7 +298,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
                     Clear
                   </Button>
                 )}
-                <div className="relative ml-auto">
+                <div className="relative ml-auto" ref={settingsRef}>
                   <Button
                     variant="ghost"
                     size="sm"
