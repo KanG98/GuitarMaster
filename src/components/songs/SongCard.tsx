@@ -27,7 +27,7 @@ export function SongCard({ song, onClick, onDelete }: SongCardProps) {
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-3 min-w-0">
+          <div className="flex items-start gap-3 min-w-0 ml-2">
             {song.youtubeVideoId ? (
               <img
                 src={`https://img.youtube.com/vi/${song.youtubeVideoId}/mqdefault.jpg`}
