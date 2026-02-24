@@ -56,6 +56,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
   const [loopB, setLoopB] = useState<number | null>(null);
   const [isLooping, setIsLooping] = useState(false);
   const [skipAmount, setSkipAmount] = useState(5);
+  const [skipInputValue, setSkipInputValue] = useState("5");
   const [showSettings, setShowSettings] = useState(false);
 
   // Initialize player
@@ -303,10 +304,23 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
                           type="number"
                           min={1}
                           max={120}
-                          value={skipAmount}
+                          value={skipInputValue}
                           onChange={(e) => {
+                            setSkipInputValue(e.target.value);
                             const v = parseInt(e.target.value, 10);
                             if (v >= 1 && v <= 120) setSkipAmount(v);
+                          }}
+                          onBlur={() => {
+                            const v = parseInt(skipInputValue, 10);
+                            if (!v || v < 1) {
+                              setSkipAmount(5);
+                              setSkipInputValue("5");
+                            } else if (v > 120) {
+                              setSkipAmount(120);
+                              setSkipInputValue("120");
+                            } else {
+                              setSkipInputValue(String(v));
+                            }
                           }}
                           className="w-16 text-sm border rounded px-2 py-1 bg-background outline-none focus:ring-1 focus:ring-primary"
                           data-testid="skip-amount-input"
