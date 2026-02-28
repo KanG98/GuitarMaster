@@ -25,10 +25,17 @@ const ENVELOPE = {
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let unlocked = false;
+let visibilityListenerAdded = false;
+
+function resumeContext(): void {
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume();
+  }
+}
 
 function init() {
   if (ctx) {
-    if (ctx.state === "suspended") ctx.resume();
+    resumeContext();
     return;
   }
   // Use webkitAudioContext for older Safari
@@ -38,13 +45,21 @@ function init() {
   masterGain.gain.value = 0.5;
   masterGain.connect(ctx.destination);
 
+  // Resume audio when returning to tab (browsers suspend AudioContext on tab switch)
+  if (!visibilityListenerAdded) {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        resumeContext();
+      }
+    });
+    visibilityListenerAdded = true;
+  }
+
   // Mobile unlock: play a silent buffer on first interaction to unlock audio
   if (!unlocked) {
     const unlock = () => {
       if (unlocked) return;
-      if (ctx && ctx.state === "suspended") {
-        ctx.resume();
-      }
+      resumeContext();
       // Play a tiny silent buffer to unlock on iOS/Safari
       if (ctx) {
         const buffer = ctx.createBuffer(1, 1, 22050);
@@ -71,6 +86,8 @@ export function ensureAudioReady(): void {
 
 export function playNote(noteName: string): void {
   init();
+  // Ensure context is running (may have been suspended by tab switch)
+  resumeContext();
   const freq = NOTE_FREQUENCIES[noteName];
   if (!freq || !ctx || !masterGain) return;
 
