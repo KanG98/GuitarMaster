@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { SkipBack, SkipForward } from "lucide-react";
+import { SkipBack, SkipForward, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { LoopControls } from "./player/LoopControls";
@@ -125,6 +125,15 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
     }
   }, [skipInputValue]);
 
+  const restartLoop = useCallback(() => {
+    const target = loopA ?? 0;
+    seekTo(target);
+    const state = getPlayerState();
+    if (state !== 1) { // not PLAYING
+      playVideo();
+    }
+  }, [loopA, seekTo, getPlayerState, playVideo]);
+
   const hasLoop = loopA !== null && loopB !== null;
 
   return (
@@ -161,6 +170,16 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
               >
                 {skipAmount}s
                 <SkipForward className="h-3 w-3 ml-1" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={restartLoop}
+                title={hasLoop ? "Restart loop" : "Restart from beginning"}
+                data-testid="restart-loop"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             </div>
 

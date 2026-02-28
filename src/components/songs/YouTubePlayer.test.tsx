@@ -133,6 +133,18 @@ describe("YouTubePlayer", () => {
     expect(screen.getByTitle("Enable loop")).toBeInTheDocument();
   });
 
+  test("renders restart button", async () => {
+    await renderAndReady();
+    expect(screen.getByTestId("restart-loop")).toBeInTheDocument();
+    expect(screen.getByTitle("Restart from beginning")).toBeInTheDocument();
+  });
+
+  test("restart button seeks to 0 when no loop is set", async () => {
+    await renderAndReady();
+    await userEvent.click(screen.getByTestId("restart-loop"));
+    expect(mockSeekTo).toHaveBeenCalledWith(0, true);
+  });
+
   test("destroys player on unmount", async () => {
     const { unmount } = await renderAndReady();
     unmount();
