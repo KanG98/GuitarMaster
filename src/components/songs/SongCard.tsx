@@ -4,19 +4,12 @@ import { Music, Trash2, User, Timer } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SongRecord } from "@/lib/fileService";
+import { formatPracticeTime } from "@/lib/utils";
 
 interface SongCardProps {
   song: SongRecord;
   onClick: () => void;
   onDelete: () => void;
-}
-
-function formatPracticeTime(totalSeconds: number): string {
-  if (totalSeconds < 60) return `${totalSeconds}s`;
-  const hours = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) return `${hours}h ${mins}m`;
-  return `${mins}m`;
 }
 
 export function SongCard({ song, onClick, onDelete }: SongCardProps) {

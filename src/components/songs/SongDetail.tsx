@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, Trash2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload/UploadZone";
@@ -8,17 +8,9 @@ import { FileGallery } from "@/components/viewer/FileGallery";
 import { FileViewer } from "@/components/viewer/FileViewer";
 import { PracticeTimer } from "./PracticeTimer";
 import { YouTubeSection } from "./YouTubeSection";
-import {
-  SongRecord,
-  FileRecord,
-  uploadFile,
-  getFiles,
-  deleteFile,
-  updateFileOrder,
-  updatePracticeTime,
-  updateSongVideo,
-} from "@/lib/fileService";
-import { searchYouTube, YouTubeSearchResult, buildGuitarTabQuery } from "@/lib/youtubeService";
+import { SongRecord, updatePracticeTime } from "@/lib/fileService";
+import { useSongFiles } from "@/hooks/useSongFiles";
+import { useYouTubeSearch } from "@/hooks/useYouTubeSearch";
 
 interface SongDetailProps {
   song: SongRecord;
@@ -27,18 +19,31 @@ interface SongDetailProps {
 }
 
 export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
-  const [files, setFiles] = useState<FileRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
   const [viewIndex, setViewIndex] = useState<number | null>(null);
-  const [videoId, setVideoId] = useState<string | null>(song.youtubeVideoId);
-  const [isSearchingYouTube, setIsSearchingYouTube] = useState(false);
-  const [youtubeResults, setYoutubeResults] = useState<YouTubeSearchResult[]>([]);
-  const [youtubeError, setYoutubeError] = useState<string | null>(null);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  // Use extracted hooks
+  const {
+    files,
+    isLoading,
+    isUploading,
+    uploadProgress,
+    error,
+    handleUpload,
+    handleDeleteFile,
+    handleReorder,
+  } = useSongFiles(song.id);
+
+  const {
+    videoId,
+    isSearchingYouTube,
+    youtubeResults,
+    youtubeError,
+    handleYouTubeSearch,
+    handleSelectVideo,
+    handleRemoveVideo,
+  } = useYouTubeSearch(song.id, song.name, song.artist, song.youtubeVideoId);
 
   const handleBack = async () => {
     const delta = practiceSecondsRef.current - song.totalPracticeSeconds;
@@ -46,89 +51,6 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
       await updatePracticeTime(song.id, delta);
     }
     onBack();
-  };
-
-  const refresh = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const result = await getFiles(song.id);
-      setFiles(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load files");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [song.id]);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  // Auto-search YouTube when entering a song with no video
-  useEffect(() => {
-    if (!song.youtubeVideoId) {
-      handleYouTubeSearch(buildGuitarTabQuery(song.name, song.artist));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [song.id]);
-
-  const handleUpload = async (selectedFiles: File[]) => {
-    setIsUploading(true);
-    setError(null);
-    setUploadProgress(selectedFiles.length > 1 ? `Uploading 1 / ${selectedFiles.length}...` : "");
-    const errors: string[] = [];
-    for (let i = 0; i < selectedFiles.length; i++) {
-      if (selectedFiles.length > 1) {
-        setUploadProgress(`Uploading ${i + 1} / ${selectedFiles.length}...`);
-      }
-      try {
-        const record = await uploadFile(song.id, selectedFiles[i]);
-        setFiles((prev) => [...prev, record]);
-      } catch (err) {
-        errors.push(`${selectedFiles[i].name}: ${err instanceof Error ? err.message : "failed"}`);
-      }
-    }
-    setIsUploading(false);
-    setUploadProgress("");
-    if (errors.length > 0) {
-      setError(`Failed to upload: ${errors.join(", ")}`);
-    }
-  };
-
-  const handleDeleteFile = async (file: FileRecord) => {
-    if (!confirm(`Delete "${file.name}"?`)) return;
-    await deleteFile(song.id, file.id);
-    refresh();
-  };
-
-  const handleReorder = async (reordered: FileRecord[]) => {
-    setFiles(reordered);
-    await updateFileOrder(song.id, reordered.map((f) => f.id));
-  };
-
-  const handleYouTubeSearch = async (query: string) => {
-    setIsSearchingYouTube(true);
-    setYoutubeError(null);
-    try {
-      const results = await searchYouTube(query);
-      setYoutubeResults(results);
-    } catch (err) {
-      setYoutubeError(err instanceof Error ? err.message : "YouTube search failed");
-    } finally {
-      setIsSearchingYouTube(false);
-    }
-  };
-
-  const handleSelectVideo = async (newVideoId: string) => {
-    setVideoId(newVideoId);
-    setYoutubeResults([]);
-    await updateSongVideo(song.id, newVideoId);
-  };
-
-  const handleRemoveVideo = async () => {
-    setVideoId(null);
-    setYoutubeResults([]);
-    await updateSongVideo(song.id, null);
   };
 
   return (

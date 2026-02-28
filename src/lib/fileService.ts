@@ -8,10 +8,31 @@ import {
   updateDoc,
   increment,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db, storage } from "./firebase";
 
-// --- Song types ---
+// --- Firestore document interfaces ---
+
+interface SongDocument {
+  name: string;
+  artist: string;
+  totalPracticeSeconds: number;
+  youtubeVideoId: string | null;
+  createdAt: Timestamp;
+}
+
+interface FileDocument {
+  name: string;
+  type: string;
+  size: number;
+  url: string;
+  storagePath: string;
+  order: number;
+  createdAt: Timestamp;
+}
+
+// --- Public types ---
 
 export interface SongRecord {
   id: string;
@@ -58,14 +79,14 @@ export async function getSongs(): Promise<SongRecord[]> {
   const snapshot = await getDocs(collection(db, SONGS_COLLECTION));
 
   const songs = snapshot.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
+    const data = d.data() as SongDocument;
     return {
       id: d.id,
-      name: data.name as string,
-      artist: (data.artist as string) ?? "",
-      totalPracticeSeconds: (data.totalPracticeSeconds as number) ?? 0,
-      youtubeVideoId: (data.youtubeVideoId as string) ?? null,
-      createdAt: (data.createdAt as { toDate(): Date })?.toDate() ?? new Date(),
+      name: data.name,
+      artist: data.artist ?? "",
+      totalPracticeSeconds: data.totalPracticeSeconds ?? 0,
+      youtubeVideoId: data.youtubeVideoId ?? null,
+      createdAt: data.createdAt?.toDate() ?? new Date(),
     };
   });
 
@@ -143,15 +164,15 @@ export async function getFiles(songId: string): Promise<FileRecord[]> {
   );
 
   const files = snapshot.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
+    const data = d.data() as FileDocument;
     return {
       id: d.id,
-      name: data.name as string,
-      type: data.type as string,
-      size: data.size as number,
-      url: data.url as string,
-      order: (data.order as number) ?? 0,
-      createdAt: (data.createdAt as { toDate(): Date })?.toDate() ?? new Date(),
+      name: data.name,
+      type: data.type,
+      size: data.size,
+      url: data.url,
+      order: data.order ?? 0,
+      createdAt: data.createdAt?.toDate() ?? new Date(),
     };
   });
 
