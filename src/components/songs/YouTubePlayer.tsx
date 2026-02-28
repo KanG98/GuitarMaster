@@ -146,7 +146,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
 
       {/* Controls toolbar */}
       {isReady && (
-        <div className="space-y-2" data-testid="player-controls">
+        <div className="space-y-3" data-testid="player-controls">
           {/* Row 1: Skip + Settings */}
           <div className="flex items-center gap-1 text-sm">
             <Button

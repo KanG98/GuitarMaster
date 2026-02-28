@@ -33,7 +33,7 @@ export function LoopControls({
   onRestartLoop,
 }: LoopControlsProps) {
   return (
-    <div className="flex flex-col gap-2 flex-1 min-w-0">
+    <div className="flex flex-col gap-3 flex-1 min-w-0">
       {/* Slider row */}
       <div className="flex items-center gap-2">
         <span className="text-xs font-mono text-muted-foreground w-10 text-right shrink-0">
