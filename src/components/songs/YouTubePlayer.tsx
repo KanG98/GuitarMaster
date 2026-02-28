@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { SkipBack, SkipForward, RotateCcw } from "lucide-react";
+import { SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { LoopControls } from "./player/LoopControls";
+import { SettingsPopover } from "./player/SettingsPopover";
 import { formatTime } from "@/lib/utils";
 import { SpeedControls } from "./player/SpeedControls";
 
@@ -146,7 +147,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
       {/* Controls toolbar */}
       {isReady && (
         <div className="space-y-2" data-testid="player-controls">
-          {/* Row 1: Skip + Restart */}
+          {/* Row 1: Skip + Settings */}
           <div className="flex items-center gap-1 text-sm">
             <Button
               variant="ghost"
@@ -170,16 +171,13 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
               {skipAmount}s
               <SkipForward className="h-3 w-3 ml-1" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={restartLoop}
-              title={hasLoop ? "Restart loop" : "Restart from beginning"}
-              data-testid="restart-loop"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </Button>
+            <SettingsPopover
+              skipInputValue={skipInputValue}
+              onSkipInputChange={handleSkipInputChange}
+              onSkipInputBlur={handleSkipInputBlur}
+              showSettings={showSettings}
+              onToggleSettings={() => setShowSettings((s) => !s)}
+            />
           </div>
 
           {/* Row 2: Loop controls */}
@@ -194,11 +192,7 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
             onSetB={handleSetB}
             onToggleLoop={toggleLoop}
             onClearLoop={clearLoop}
-            skipInputValue={skipInputValue}
-            onSkipInputChange={handleSkipInputChange}
-            onSkipInputBlur={handleSkipInputBlur}
-            showSettings={showSettings}
-            onToggleSettings={() => setShowSettings((s) => !s)}
+            onRestartLoop={restartLoop}
           />
 
           {/* Row 3: Speed controls */}

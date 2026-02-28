@@ -1,9 +1,8 @@
 "use client";
 
-import { Repeat } from "lucide-react";
+import { Repeat, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { SettingsPopover } from "./SettingsPopover";
 import { formatTime } from "@/lib/utils";
 
 interface LoopControlsProps {
@@ -17,11 +16,7 @@ interface LoopControlsProps {
   onSetB: () => void;
   onToggleLoop: () => void;
   onClearLoop: () => void;
-  skipInputValue: string;
-  onSkipInputChange: (value: string) => void;
-  onSkipInputBlur: () => void;
-  showSettings: boolean;
-  onToggleSettings: () => void;
+  onRestartLoop: () => void;
 }
 
 export function LoopControls({
@@ -35,11 +30,7 @@ export function LoopControls({
   onSetB,
   onToggleLoop,
   onClearLoop,
-  skipInputValue,
-  onSkipInputChange,
-  onSkipInputBlur,
-  showSettings,
-  onToggleSettings,
+  onRestartLoop,
 }: LoopControlsProps) {
   return (
     <div className="flex flex-col gap-2 flex-1 min-w-0">
@@ -63,6 +54,16 @@ export function LoopControls({
       </div>
       {/* Controls row */}
       <div className="flex items-center gap-1.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0"
+          onClick={onRestartLoop}
+          title={hasLoop ? "Restart loop" : "Restart from beginning"}
+          data-testid="restart-loop"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </Button>
         <button
           onClick={onSetA}
           className="h-7 px-2.5 text-xs font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"
@@ -100,13 +101,6 @@ export function LoopControls({
             Clear
           </Button>
         )}
-        <SettingsPopover
-          skipInputValue={skipInputValue}
-          onSkipInputChange={onSkipInputChange}
-          onSkipInputBlur={onSkipInputBlur}
-          showSettings={showSettings}
-          onToggleSettings={onToggleSettings}
-        />
       </div>
     </div>
   );
