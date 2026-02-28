@@ -62,7 +62,7 @@ export function LoopControls({
         </span>
       </div>
       {/* Controls row */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={onSetA}
           className="h-7 px-2.5 text-xs font-semibold rounded border bg-muted hover:bg-muted/80 transition-colors text-muted-foreground"

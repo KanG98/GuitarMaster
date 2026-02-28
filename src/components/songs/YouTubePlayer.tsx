@@ -146,65 +146,62 @@ export function YouTubePlayer({ videoId, onPlayingChange }: YouTubePlayerProps) 
       {/* Controls toolbar */}
       {isReady && (
         <div className="space-y-2" data-testid="player-controls">
-          {/* Row 1: Skip + Loop */}
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                onClick={() => skip(-skipAmount)}
-                title={`Skip back ${skipAmount}s`}
-                data-testid="skip-back"
-              >
-                <SkipBack className="h-3 w-3 mr-1" />
-                {skipAmount}s
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                onClick={() => skip(skipAmount)}
-                title={`Skip forward ${skipAmount}s`}
-                data-testid="skip-forward"
-              >
-                {skipAmount}s
-                <SkipForward className="h-3 w-3 ml-1" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={restartLoop}
-                title={hasLoop ? "Restart loop" : "Restart from beginning"}
-                data-testid="restart-loop"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            <div className="w-px h-5 bg-border" />
-
-            <LoopControls
-              duration={duration}
-              loopA={loopA}
-              loopB={loopB}
-              isLooping={isLooping}
-              hasLoop={hasLoop}
-              onLoopRangeChange={handleLoopRange}
-              onSetA={handleSetA}
-              onSetB={handleSetB}
-              onToggleLoop={toggleLoop}
-              onClearLoop={clearLoop}
-              skipInputValue={skipInputValue}
-              onSkipInputChange={handleSkipInputChange}
-              onSkipInputBlur={handleSkipInputBlur}
-              showSettings={showSettings}
-              onToggleSettings={() => setShowSettings((s) => !s)}
-            />
+          {/* Row 1: Skip + Restart */}
+          <div className="flex items-center gap-1 text-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => skip(-skipAmount)}
+              title={`Skip back ${skipAmount}s`}
+              data-testid="skip-back"
+            >
+              <SkipBack className="h-3 w-3 mr-1" />
+              {skipAmount}s
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => skip(skipAmount)}
+              title={`Skip forward ${skipAmount}s`}
+              data-testid="skip-forward"
+            >
+              {skipAmount}s
+              <SkipForward className="h-3 w-3 ml-1" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={restartLoop}
+              title={hasLoop ? "Restart loop" : "Restart from beginning"}
+              data-testid="restart-loop"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
           </div>
 
-          {/* Row 2: Speed controls */}
+          {/* Row 2: Loop controls */}
+          <LoopControls
+            duration={duration}
+            loopA={loopA}
+            loopB={loopB}
+            isLooping={isLooping}
+            hasLoop={hasLoop}
+            onLoopRangeChange={handleLoopRange}
+            onSetA={handleSetA}
+            onSetB={handleSetB}
+            onToggleLoop={toggleLoop}
+            onClearLoop={clearLoop}
+            skipInputValue={skipInputValue}
+            onSkipInputChange={handleSkipInputChange}
+            onSkipInputBlur={handleSkipInputBlur}
+            showSettings={showSettings}
+            onToggleSettings={() => setShowSettings((s) => !s)}
+          />
+
+          {/* Row 3: Speed controls */}
           <SpeedControls
             playbackRate={playbackRate}
             onChangeSpeed={changeSpeed}
