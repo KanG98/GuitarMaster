@@ -24,8 +24,7 @@ const ENVELOPE = {
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
-let unlocked = false;
-let visibilityListenerAdded = false;
+let listenersAdded = false;
 
 function resumeContext(): void {
   if (ctx && ctx.state === "suspended") {
@@ -45,22 +44,28 @@ function init() {
   masterGain.gain.value = 0.5;
   masterGain.connect(ctx.destination);
 
-  // Resume audio when returning to tab (browsers suspend AudioContext on tab switch)
-  if (!visibilityListenerAdded) {
+  if (!listenersAdded) {
+    // Permanent listener: resume audio on ANY user interaction.
+    // Mobile browsers suspend AudioContext when switching apps and require
+    // a user gesture to resume it. This listener stays active forever so
+    // audio works again on the first tap after returning to the app.
+    const resumeOnInteraction = () => resumeContext();
+    document.addEventListener("touchstart", resumeOnInteraction, { passive: true });
+    document.addEventListener("touchend", resumeOnInteraction, { passive: true });
+    document.addEventListener("click", resumeOnInteraction, { passive: true });
+
+    // Also try resuming when tab becomes visible again
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         resumeContext();
       }
     });
-    visibilityListenerAdded = true;
-  }
 
-  // Mobile unlock: play a silent buffer on first interaction to unlock audio
-  if (!unlocked) {
+    // iOS/Safari unlock: play a silent buffer on first interaction
+    let unlocked = false;
     const unlock = () => {
       if (unlocked) return;
       resumeContext();
-      // Play a tiny silent buffer to unlock on iOS/Safari
       if (ctx) {
         const buffer = ctx.createBuffer(1, 1, 22050);
         const source = ctx.createBufferSource();
@@ -69,13 +74,11 @@ function init() {
         source.start(0);
       }
       unlocked = true;
-      document.removeEventListener("touchstart", unlock);
-      document.removeEventListener("touchend", unlock);
-      document.removeEventListener("click", unlock);
     };
     document.addEventListener("touchstart", unlock, { passive: true });
-    document.addEventListener("touchend", unlock, { passive: true });
     document.addEventListener("click", unlock, { passive: true });
+
+    listenersAdded = true;
   }
 }
 
