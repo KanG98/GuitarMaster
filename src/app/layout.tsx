@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { THEMES } from "@/lib/themes";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,8 +25,34 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Generate theme data for the inline script
+  const themeData = Object.fromEntries(
+    THEMES.map(t => [t.id, { 
+      primary: t.primary, 
+      primaryForeground: t.primaryForeground, 
+      ring: t.ring 
+    }])
+  );
+
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            try {
+              var t = localStorage.getItem("guitar-master-theme");
+              var themes = ${JSON.stringify(themeData)};
+              if (t && themes[t]) {
+                var c = themes[t];
+                var r = document.documentElement.style;
+                r.setProperty("--primary", c.primary);
+                r.setProperty("--primary-foreground", c.primaryForeground);
+                r.setProperty("--ring", c.ring);
+              }
+            } catch(e) {}
+          })()
+        `}} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
