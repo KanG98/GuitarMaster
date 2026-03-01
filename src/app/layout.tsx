@@ -35,7 +35,7 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
@@ -44,10 +44,10 @@ export default function RootLayout({
               var themes = ${JSON.stringify(themeData)};
               if (t && themes[t]) {
                 var c = themes[t];
-                var r = document.documentElement.style;
-                r.setProperty("--primary", c.primary);
-                r.setProperty("--primary-foreground", c.primaryForeground);
-                r.setProperty("--ring", c.ring);
+                var s = document.createElement("style");
+                s.id = "gm-theme";
+                s.textContent = ":root{--primary:"+c.primary+";--primary-foreground:"+c.primaryForeground+";--ring:"+c.ring+"}";
+                document.head.appendChild(s);
               }
             } catch(e) {}
           })()

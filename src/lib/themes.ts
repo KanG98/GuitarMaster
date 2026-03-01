@@ -21,10 +21,19 @@ export const THEMES: ThemeColors[] = [
 export const STORAGE_KEY = "guitar-master-theme";
 
 export function applyTheme(theme: ThemeColors): void {
-  const root = document.documentElement;
-  root.style.setProperty("--primary", theme.primary);
-  root.style.setProperty("--primary-foreground", theme.primaryForeground);
-  root.style.setProperty("--ring", theme.ring);
+  // Use a <style> tag instead of inline styles on <html> to avoid hydration mismatch
+  let styleEl = document.getElementById("gm-theme") as HTMLStyleElement | null;
+  if (theme.id === "default") {
+    // Remove override style to fall back to CSS defaults
+    styleEl?.remove();
+    return;
+  }
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "gm-theme";
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `:root{--primary:${theme.primary};--primary-foreground:${theme.primaryForeground};--ring:${theme.ring}}`;
 }
 
 export function loadSavedTheme(): ThemeColors {
