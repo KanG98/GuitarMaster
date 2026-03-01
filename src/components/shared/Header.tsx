@@ -1,10 +1,10 @@
 "use client";
 
-import { Guitar, Ear, BookOpen } from "lucide-react";
+import { Guitar, Ear, BookOpen, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemePicker } from "./ThemePicker";
 
-export type ToolName = "songs" | "earTrainer" | "chordLibrary";
+export type ToolName = "songs" | "earTrainer" | "chordLibrary" | "theory";
 
 interface HeaderProps {
   currentTool: ToolName;
@@ -55,6 +55,16 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
             >
               <BookOpen className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Chords</span>
+            </Button>
+            <Button
+              variant={currentTool === "theory" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onToolChange("theory")}
+              data-testid="nav-theory"
+              title="Theory"
+            >
+              <Music className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Theory</span>
             </Button>
           </nav>
         </div>
