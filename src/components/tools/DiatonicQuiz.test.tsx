@@ -48,7 +48,7 @@ describe("DiatonicQuiz", () => {
     fireEvent.click(startBtn);
     
     const prompt = screen.getByTestId("quiz-prompt");
-    expect(prompt.textContent).toMatch(/What is the \*\*[IVX]+\*\* \(.+\) chord in the key of \*\*C\*\*\?/);
+    expect(prompt.textContent).toMatch(/What is the \*\*\d+(st|nd|rd|th)\*\* \(.+\) chord in the key of \*\*C\*\*\?/);
   });
 
   test("shows 4 options when quiz starts", () => {
@@ -81,8 +81,8 @@ describe("DiatonicQuiz", () => {
     
     // For key of C, determine the correct chord
     const cKeyChords = {
-      "I": "C", "II": "Dm", "III": "Em", "IV": "F", 
-      "V": "G", "VI": "Am", "VII": "Bdim"
+      "1st": "C", "2nd": "Dm", "3rd": "Em", "4th": "F", 
+      "5th": "G", "6th": "Am", "7th": "Bdim"
     };
     const correctChord = cKeyChords[degree as keyof typeof cKeyChords];
     

@@ -31,24 +31,24 @@ describe("diatonicData", () => {
 
   test("Known chords spot-check for key of C", () => {
     const cKey = DIATONIC_TABLE.C;
-    expect(cKey[0]).toEqual({ degree: "I", quality: "Major", chord: "C" });
-    expect(cKey[1]).toEqual({ degree: "II", quality: "minor", chord: "Dm" });
-    expect(cKey[4]).toEqual({ degree: "V", quality: "Major", chord: "G" });
-    expect(cKey[6]).toEqual({ degree: "VII", quality: "dim", chord: "Bdim" });
+    expect(cKey[0]).toEqual({ degree: "1st", quality: "Major", chord: "C" });
+    expect(cKey[1]).toEqual({ degree: "2nd", quality: "minor", chord: "Dm" });
+    expect(cKey[4]).toEqual({ degree: "5th", quality: "Major", chord: "G" });
+    expect(cKey[6]).toEqual({ degree: "7th", quality: "dim", chord: "Bdim" });
   });
 
   test("Known chords spot-check for key of D", () => {
     const dKey = DIATONIC_TABLE.D;
-    expect(dKey[0]).toEqual({ degree: "I", quality: "Major", chord: "D" });
-    expect(dKey[2]).toEqual({ degree: "III", quality: "minor", chord: "F#m" });
-    expect(dKey[5]).toEqual({ degree: "VI", quality: "minor", chord: "Bm" });
+    expect(dKey[0]).toEqual({ degree: "1st", quality: "Major", chord: "D" });
+    expect(dKey[2]).toEqual({ degree: "3rd", quality: "minor", chord: "F#m" });
+    expect(dKey[5]).toEqual({ degree: "6th", quality: "minor", chord: "Bm" });
   });
 
   test("Known chords spot-check for key of G", () => {
     const gKey = DIATONIC_TABLE.G;
-    expect(gKey[0]).toEqual({ degree: "I", quality: "Major", chord: "G" });
-    expect(gKey[3]).toEqual({ degree: "IV", quality: "Major", chord: "C" });
-    expect(gKey[4]).toEqual({ degree: "V", quality: "Major", chord: "D" });
+    expect(gKey[0]).toEqual({ degree: "1st", quality: "Major", chord: "G" });
+    expect(gKey[3]).toEqual({ degree: "4th", quality: "Major", chord: "C" });
+    expect(gKey[4]).toEqual({ degree: "5th", quality: "Major", chord: "D" });
   });
 
   test("getRandomDegree returns valid degree", () => {
@@ -59,11 +59,11 @@ describe("diatonicData", () => {
   });
 
   test("getChordForKeyAndDegree returns correct chord", () => {
-    const result = getChordForKeyAndDegree("C", "V");
-    expect(result).toEqual({ degree: "V", quality: "Major", chord: "G" });
+    const result = getChordForKeyAndDegree("C", "5th");
+    expect(result).toEqual({ degree: "5th", quality: "Major", chord: "G" });
     
-    const result2 = getChordForKeyAndDegree("A", "II");
-    expect(result2).toEqual({ degree: "II", quality: "minor", chord: "Bm" });
+    const result2 = getChordForKeyAndDegree("A", "2nd");
+    expect(result2).toEqual({ degree: "2nd", quality: "minor", chord: "Bm" });
   });
 
   test("getChordForKeyAndDegree throws for invalid degree", () => {
