@@ -48,7 +48,7 @@ describe("DiatonicQuiz", () => {
     fireEvent.click(startBtn);
     
     const prompt = screen.getByTestId("quiz-prompt");
-    expect(prompt.textContent).toMatch(/What is the \*\*\d+(st|nd|rd|th)\*\* \(.+\) chord in the key of \*\*C\*\*\?/);
+    expect(prompt.textContent).toMatch(/What is the \d+(st|nd|rd|th) \(.+\) chord in the key of C\?/);
   });
 
   test("shows 4 options when quiz starts", () => {
@@ -179,5 +179,39 @@ describe("DiatonicQuiz", () => {
         expect(option).toBeDisabled();
       });
     });
+  });
+
+  test("renders mode toggle buttons", () => {
+    render(<DiatonicQuiz />);
+    expect(screen.getByTestId("mode-chords")).toBeInTheDocument();
+    expect(screen.getByTestId("mode-intervals")).toBeInTheDocument();
+  });
+
+  test("switching to intervals mode shows interval question", () => {
+    render(<DiatonicQuiz />);
+    fireEvent.click(screen.getByTestId("mode-intervals"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    const prompt = screen.getByTestId("quiz-prompt");
+    expect(prompt.textContent).toMatch(/What notes compose the .+ chord\?/);
+  });
+
+  test("intervals mode options contain interval patterns", () => {
+    render(<DiatonicQuiz />);
+    fireEvent.click(screen.getByTestId("mode-intervals"));
+    fireEvent.click(screen.getByTestId("start-btn"));
+
+    const options = screen.getByTestId("quiz-options");
+    // Interval patterns look like "1-3-5", "2-4-6" etc.
+    expect(options.textContent).toMatch(/\d-\d-\d/);
+  });
+
+  test("switching mode resets quiz", () => {
+    render(<DiatonicQuiz />);
+    fireEvent.click(screen.getByTestId("start-btn"));
+    expect(screen.getByTestId("start-btn")).toHaveTextContent("Reset");
+
+    fireEvent.click(screen.getByTestId("mode-intervals"));
+    expect(screen.getByTestId("start-btn")).toHaveTextContent("Start Quiz");
   });
 });

@@ -1,63 +1,93 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Play, RotateCcw, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizState } from "@/hooks/useQuizState";
-import { 
-  DIATONIC_TABLE, 
-  ALL_KEYS, 
-  getRandomDegree, 
+import {
+  ALL_KEYS,
+  DEGREE_INTERVALS,
+  ALL_INTERVALS,
+  getRandomDegree,
   getChordForKeyAndDegree,
   generateDistractors,
-  type KeyName, 
-  type Degree,
-  type DiatonicEntry
+  type KeyName,
+  type QuizMode,
 } from "@/lib/diatonicData";
 
-interface QuestionData {
-  key: KeyName;
-  degree: Degree;
-  correctAnswer: DiatonicEntry;
+interface ChordQuestion {
+  mode: "chords";
+  degree: string;
+  quality: string;
+  correctAnswer: string;
   options: string[];
 }
+
+interface IntervalQuestion {
+  mode: "intervals";
+  chord: string;
+  degree: string;
+  correctAnswer: string;
+  options: string[];
+}
+
+type QuestionData = ChordQuestion | IntervalQuestion;
 
 interface FeedbackData {
   type: "correct" | "wrong";
   correctAnswer: string;
-  selectedAnswer?: string;
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 export function DiatonicQuiz() {
   const { quizState, setQuizState, stats, startQuiz, resetQuiz, recordAnswer } = useQuizState();
   const [selectedKey, setSelectedKey] = useState<KeyName>("C");
+  const [quizMode, setQuizMode] = useState<QuizMode>("chords");
   const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
 
-  const generateQuestion = useCallback((key: KeyName): QuestionData => {
+  const generateQuestion = useCallback((key: KeyName, mode: QuizMode): QuestionData => {
     const degree = getRandomDegree();
-    const correctAnswer = getChordForKeyAndDegree(key, degree);
-    const distractors = generateDistractors(key, correctAnswer.chord, 3);
-    
-    // Shuffle options
-    const allOptions = [correctAnswer.chord, ...distractors];
-    const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
-    
+    const entry = getChordForKeyAndDegree(key, degree);
+
+    if (mode === "intervals") {
+      const correctInterval = DEGREE_INTERVALS[degree];
+      const wrongIntervals = ALL_INTERVALS.filter(i => i !== correctInterval);
+      const distractors = shuffleArray(wrongIntervals).slice(0, 3);
+      return {
+        mode: "intervals",
+        chord: entry.chord,
+        degree,
+        correctAnswer: correctInterval,
+        options: shuffleArray([correctInterval, ...distractors]),
+      };
+    }
+
+    const distractors = generateDistractors(key, entry.chord, 3);
     return {
-      key,
+      mode: "chords",
       degree,
-      correctAnswer,
-      options: shuffledOptions,
+      quality: entry.quality,
+      correctAnswer: entry.chord,
+      options: shuffleArray([entry.chord, ...distractors]),
     };
   }, []);
 
   const handleStart = useCallback(() => {
     startQuiz();
-    const question = generateQuestion(selectedKey);
+    const question = generateQuestion(selectedKey, quizMode);
     setCurrentQuestion(question);
     setFeedback(null);
     setQuizState("playing");
-  }, [selectedKey, startQuiz, setQuizState, generateQuestion]);
+  }, [selectedKey, quizMode, startQuiz, setQuizState, generateQuestion]);
 
   const handleReset = useCallback(() => {
     resetQuiz();
@@ -65,53 +95,47 @@ export function DiatonicQuiz() {
     setFeedback(null);
   }, [resetQuiz]);
 
+  const switchMode = (mode: QuizMode) => {
+    if (mode === quizMode) return;
+    setQuizMode(mode);
+    if (quizState !== "idle") handleReset();
+  };
+
   const handleAnswer = useCallback((selectedAnswer: string) => {
     if (!currentQuestion || quizState !== "playing") return;
 
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer.chord;
+    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
     recordAnswer(isCorrect);
 
     setFeedback({
       type: isCorrect ? "correct" : "wrong",
-      correctAnswer: currentQuestion.correctAnswer.chord,
-      selectedAnswer,
+      correctAnswer: currentQuestion.correctAnswer,
     });
     setQuizState("feedback");
 
-    // Auto-advance after 1.5 seconds
     setTimeout(() => {
-      const nextQuestion = generateQuestion(selectedKey);
+      const nextQuestion = generateQuestion(selectedKey, quizMode);
       setCurrentQuestion(nextQuestion);
       setFeedback(null);
       setQuizState("playing");
     }, 1500);
-  }, [currentQuestion, quizState, recordAnswer, setQuizState, selectedKey, generateQuestion]);
+  }, [currentQuestion, quizState, recordAnswer, setQuizState, selectedKey, quizMode, generateQuestion]);
 
   const getPromptText = () => {
-    if (quizState === "idle") {
-      return "Ready to test your diatonic chord knowledge?";
-    }
-    
-    if (!currentQuestion) {
-      return "Generating question...";
+    if (quizState === "idle") return "Ready to test your diatonic chord knowledge?";
+    if (!currentQuestion) return "Generating question...";
+
+    if (currentQuestion.mode === "intervals") {
+      return `What notes compose the <strong>${currentQuestion.chord}</strong> chord? (${currentQuestion.degree})`;
     }
 
-    const { key, degree, correctAnswer } = currentQuestion;
-    return `What is the **${degree}** (${correctAnswer.quality}) chord in the key of **${key}**?`;
+    return `What is the <strong>${currentQuestion.degree}</strong> (${currentQuestion.quality}) chord in the key of <strong>${selectedKey}</strong>?`;
   };
 
-  const getButtonVariant = (option: string) => {
-    if (quizState !== "feedback") return "outline";
-    
-    if (!feedback) return "outline";
-    
-    // Correct answer is always green
-    if (option === feedback.correctAnswer) return "default";
-    
-    // Wrong selected answer is red
-    if (option === feedback.selectedAnswer && feedback.type === "wrong") return "destructive";
-    
-    return "outline";
+  const getOptionClass = (option: string) => {
+    if (quizState !== "feedback" || !feedback) return "";
+    if (option === feedback.correctAnswer) return "bg-emerald-100 border-emerald-500 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-500 dark:text-emerald-200";
+    return "";
   };
 
   return (
@@ -126,21 +150,39 @@ export function DiatonicQuiz() {
         </p>
       </div>
 
+      {/* Mode Tabs */}
+      <div className="flex gap-2 justify-center">
+        <Button
+          variant={quizMode === "chords" ? "default" : "outline"}
+          size="sm"
+          onClick={() => switchMode("chords")}
+          data-testid="mode-chords"
+        >
+          Chords
+        </Button>
+        <Button
+          variant={quizMode === "intervals" ? "default" : "outline"}
+          size="sm"
+          onClick={() => switchMode("intervals")}
+          data-testid="mode-intervals"
+        >
+          Intervals
+        </Button>
+      </div>
+
       {/* Key Selector */}
       <div className="flex justify-center">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Select Key:</label>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">Key:</label>
           <select
             value={selectedKey}
             onChange={(e) => setSelectedKey(e.target.value as KeyName)}
             disabled={quizState !== "idle"}
-            className="text-sm border rounded-md px-3 py-2 bg-background outline-none focus:ring-1 focus:ring-primary w-[180px]"
+            className="text-sm border rounded-md px-3 py-2 bg-background outline-none focus:ring-1 focus:ring-primary"
             data-testid="key-selector"
           >
             {ALL_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
+              <option key={key} value={key}>{key}</option>
             ))}
           </select>
         </div>
@@ -148,8 +190,8 @@ export function DiatonicQuiz() {
 
       {/* Quiz Panel */}
       <div className="rounded-lg border bg-muted/30 p-6 space-y-4" data-testid="quiz-panel">
-        <p 
-          className="text-center font-medium text-lg" 
+        <p
+          className="text-center font-medium text-lg"
           data-testid="quiz-prompt"
           dangerouslySetInnerHTML={{ __html: getPromptText() }}
         />
@@ -171,16 +213,16 @@ export function DiatonicQuiz() {
 
         {/* Quiz Options */}
         {currentQuestion && quizState !== "idle" && (
-          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+          <div className="grid grid-cols-2 gap-3 max-w-md mx-auto" data-testid="quiz-options">
             {currentQuestion.options.map((option, index) => (
               <Button
                 key={option}
-                variant={getButtonVariant(option)}
+                variant="outline"
                 size="lg"
                 onClick={() => handleAnswer(option)}
                 disabled={quizState !== "playing"}
                 data-testid={`quiz-option-${index}`}
-                className="active:scale-95 transition-transform duration-150"
+                className={`active:scale-95 transition-all duration-150 ${getOptionClass(option)}`}
               >
                 {option}
               </Button>
@@ -188,13 +230,11 @@ export function DiatonicQuiz() {
           </div>
         )}
 
-        {/* Stats Display */}
+        {/* Stats */}
         <div className="flex justify-center gap-6 text-sm pt-2">
           <div className="text-center">
             <span className="text-muted-foreground">Score</span>
-            <p className="font-semibold" data-testid="score-value">
-              {stats.correct} / {stats.total}
-            </p>
+            <p className="font-semibold" data-testid="score-value">{stats.correct} / {stats.total}</p>
           </div>
           <div className="text-center">
             <span className="text-muted-foreground">Streak</span>
@@ -207,12 +247,12 @@ export function DiatonicQuiz() {
         </div>
       </div>
 
-      {/* Feedback Overlay */}
+      {/* Feedback */}
       {feedback && (
-        <div 
+        <div
           className={`text-center p-4 rounded-lg border ${
-            feedback.type === "correct" 
-              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200" 
+            feedback.type === "correct"
+              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
               : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-200"
           }`}
           data-testid="feedback-overlay"

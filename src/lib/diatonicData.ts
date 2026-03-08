@@ -4,8 +4,22 @@ export const ALL_KEYS: KeyName[] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "
 
 export const DEGREE_LABELS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"] as const;
 export type Degree = typeof DEGREE_LABELS[number];
+export type QuizMode = "chords" | "intervals";
 
 export const DEGREE_QUALITIES = ["Major", "minor", "minor", "Major", "Major", "minor", "dim"] as const;
+
+// Scale degree intervals that compose each chord (triad built on that degree)
+export const DEGREE_INTERVALS: Record<Degree, string> = {
+  "1st": "1-3-5",
+  "2nd": "2-4-6",
+  "3rd": "3-5-7",
+  "4th": "4-6-1",
+  "5th": "5-7-2",
+  "6th": "6-1-3",
+  "7th": "7-2-4",
+};
+
+export const ALL_INTERVALS = Object.values(DEGREE_INTERVALS);
 
 export interface DiatonicEntry {
   degree: Degree;
