@@ -52,6 +52,60 @@ describe("RhythmTrainer", () => {
     jest.useFakeTimers();
   });
 
+  describe("Mode Toggle", () => {
+    it("renders mode toggle buttons", () => {
+      render(<RhythmTrainer />);
+      
+      expect(screen.getByTestId("mode-beats")).toBeInTheDocument();
+      expect(screen.getByTestId("mode-reading")).toBeInTheDocument();
+    });
+
+    it("starts in beats mode by default", () => {
+      render(<RhythmTrainer />);
+      
+      const beatsButton = screen.getByTestId("mode-beats");
+      const readingButton = screen.getByTestId("mode-reading");
+      
+      // Beats button should be active (default variant), reading should be outline
+      expect(beatsButton).toHaveClass("bg-primary"); // default variant
+      expect(readingButton).not.toHaveClass("bg-primary"); // outline variant
+      
+      // Should show beats display
+      expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
+    });
+
+    it("switches to reading mode when reading button is clicked", async () => {
+      render(<RhythmTrainer />);
+      
+      const readingButton = screen.getByTestId("mode-reading");
+      fireEvent.click(readingButton);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId("rhythm-sequence")).toBeInTheDocument();
+      });
+    });
+
+    it("switches back to beats mode", async () => {
+      render(<RhythmTrainer />);
+      
+      // Switch to reading mode first
+      const readingButton = screen.getByTestId("mode-reading");
+      fireEvent.click(readingButton);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId("rhythm-sequence")).toBeInTheDocument();
+      });
+      
+      // Switch back to beats mode
+      const beatsButton = screen.getByTestId("mode-beats");
+      fireEvent.click(beatsButton);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
+      });
+    });
+  });
+
   it("renders 8 beat squares", () => {
     render(<RhythmTrainer />);
     
@@ -155,6 +209,65 @@ describe("RhythmTrainer", () => {
     });
   });
 
+  describe("Reading Mode", () => {
+    beforeEach(() => {
+      render(<RhythmTrainer />);
+      // Switch to reading mode
+      const readingButton = screen.getByTestId("mode-reading");
+      fireEvent.click(readingButton);
+    });
+
+    it("renders rhythm sequence in reading mode", async () => {
+      await waitFor(() => {
+        expect(screen.getByTestId("rhythm-sequence")).toBeInTheDocument();
+      });
+    });
+
+    it("renders notes with test ids", async () => {
+      await waitFor(() => {
+        // Should render notes with sequential test ids
+        expect(screen.getByTestId("note-0")).toBeInTheDocument();
+        
+        // Check if there are multiple notes (sequence should have several notes)
+        const notes = screen.getAllByTestId(/^note-\d+$/);
+        expect(notes.length).toBeGreaterThan(1);
+      });
+    });
+
+    it("renders bar lines", async () => {
+      await waitFor(() => {
+        // Should have bar lines at beats 4, 8, 12
+        expect(screen.getByTestId("bar-line-1")).toBeInTheDocument();
+        expect(screen.getByTestId("bar-line-2")).toBeInTheDocument();
+        expect(screen.getByTestId("bar-line-3")).toBeInTheDocument();
+      });
+    });
+
+    it("generates new rhythm sequence when Next is clicked", async () => {
+      await waitFor(() => {
+        expect(screen.getByTestId("rhythm-sequence")).toBeInTheDocument();
+      });
+
+      const nextButton = screen.getByTestId("next-btn");
+      fireEvent.click(nextButton);
+
+      await waitFor(() => {
+        // Should still have the rhythm sequence (component should re-render)
+        expect(screen.getByTestId("rhythm-sequence")).toBeInTheDocument();
+        expect(screen.getByTestId("note-0")).toBeInTheDocument();
+      });
+    });
+
+    it("shows rhythm reading legend", async () => {
+      await waitFor(() => {
+        expect(screen.getByText("Whole (4)")).toBeInTheDocument();
+        expect(screen.getByText("Half (2)")).toBeInTheDocument();
+        expect(screen.getByText("Quarter (1)")).toBeInTheDocument();
+        expect(screen.getByText("Eighth (0.5)")).toBeInTheDocument();
+      });
+    });
+  });
+
   it("renders all required UI elements", () => {
     render(<RhythmTrainer />);
     
@@ -166,6 +279,10 @@ describe("RhythmTrainer", () => {
     expect(screen.getByTestId("play-btn")).toBeInTheDocument();
     expect(screen.getByTestId("next-btn")).toBeInTheDocument();
     expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
+    
+    // Check for mode toggle
+    expect(screen.getByTestId("mode-beats")).toBeInTheDocument();
+    expect(screen.getByTestId("mode-reading")).toBeInTheDocument();
     
     // Check for legend
     expect(screen.getByText("Full")).toBeInTheDocument();
