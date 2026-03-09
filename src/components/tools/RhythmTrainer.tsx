@@ -22,19 +22,19 @@ function playClick(ctx: AudioContext, type: BeatType) {
   const now = ctx.currentTime;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  
+
   osc.connect(gain);
   gain.connect(ctx.destination);
-  
-  // Different sounds for different beat types
+
   osc.frequency.value = type === "full" ? 1000 : type === "half" ? 800 : 600;
   osc.type = "sine";
-  
+
   const duration = type === "full" ? 0.08 : type === "half" ? 0.05 : 0.03;
-  
-  gain.gain.setValueAtTime(0.5, now);
+  const volume = type === "full" ? 0.6 : type === "half" ? 0.4 : 0.25;
+
+  gain.gain.setValueAtTime(volume, now);
   gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-  
+
   osc.start(now);
   osc.stop(now + duration);
 }
@@ -44,193 +44,107 @@ export function RhythmTrainer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [pattern, setPattern] = useState<Beat[]>(() => generatePattern());
-  
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const listenersAddedRef = useRef(false);
 
-  const resumeContext = useCallback(() => {
-    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-      audioContextRef.current.resume();
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const beatRef = useRef(0);
+  const patternRef = useRef(pattern);
+  const bpmRef = useRef(bpm);
+
+  // Keep refs in sync
+  patternRef.current = pattern;
+  bpmRef.current = bpm;
+
+  const getOrCreateCtx = useCallback((): AudioContext => {
+    if (!audioCtxRef.current) {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioCtxRef.current = new Ctx();
     }
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
   }, []);
 
-  const initAudioContext = useCallback(() => {
-    if (audioContextRef.current) {
-      resumeContext();
-      return;
-    }
-
-    // Use webkitAudioContext for older Safari
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    audioContextRef.current = new AudioCtx();
-
-    if (!listenersAddedRef.current) {
-      // Mobile browser audio context resume handling
-      const resumeOnInteraction = () => resumeContext();
-      document.addEventListener("touchstart", resumeOnInteraction, { passive: true });
-      document.addEventListener("touchend", resumeOnInteraction, { passive: true });
-      document.addEventListener("click", resumeOnInteraction, { passive: true });
-
-      // Resume when tab becomes visible again
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          resumeContext();
-        }
-      });
-
-      // iOS/Safari unlock: play a silent buffer on first interaction
-      let unlocked = false;
-      const unlock = () => {
-        if (unlocked) return;
-        resumeContext();
-        if (audioContextRef.current) {
-          const buffer = audioContextRef.current.createBuffer(1, 1, 22050);
-          const source = audioContextRef.current.createBufferSource();
-          source.buffer = buffer;
-          source.connect(audioContextRef.current.destination);
-          source.start(0);
-        }
-        unlocked = true;
-      };
-      document.addEventListener("touchstart", unlock, { passive: true });
-      document.addEventListener("click", unlock, { passive: true });
-
-      listenersAddedRef.current = true;
-    }
-  }, [resumeContext]);
-
-  const startPlayback = useCallback(() => {
-    if (!audioContextRef.current) {
-      initAudioContext();
-    }
-    
-    resumeContext();
-    
-    const interval = 60000 / bpm; // milliseconds per beat
-    let beatIndex = 0;
-    
-    const tick = () => {
-      setCurrentBeat(beatIndex);
-      
-      if (audioContextRef.current) {
-        playClick(audioContextRef.current, pattern[beatIndex].type);
+  // Mobile audio unlock — permanent listeners
+  useEffect(() => {
+    const resume = () => {
+      if (audioCtxRef.current?.state === "suspended") {
+        audioCtxRef.current.resume();
       }
-      
-      beatIndex = (beatIndex + 1) % 8; // Loop back to 0 after 7
     };
-    
-    // Start immediately
-    tick();
-    
-    intervalRef.current = setInterval(tick, interval);
-    setIsPlaying(true);
-  }, [bpm, pattern, initAudioContext, resumeContext]);
+    document.addEventListener("touchstart", resume, { passive: true });
+    document.addEventListener("click", resume, { passive: true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") resume();
+    });
+  }, []);
 
-  const stopPlayback = useCallback(() => {
+  const stopLoop = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    setIsPlaying(false);
-    setCurrentBeat(-1);
   }, []);
+
+  const startLoop = useCallback(() => {
+    stopLoop();
+    const ctx = getOrCreateCtx();
+
+    const tick = () => {
+      const idx = beatRef.current;
+      const p = patternRef.current;
+      setCurrentBeat(idx);
+      playClick(ctx, p[idx].type);
+      beatRef.current = (idx + 1) % 8;
+    };
+
+    tick(); // play first beat immediately
+    intervalRef.current = setInterval(tick, 60000 / bpmRef.current);
+  }, [getOrCreateCtx, stopLoop]);
+
+  // Restart interval when BPM changes during playback
+  useEffect(() => {
+    if (isPlaying) {
+      startLoop();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bpm]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      stopLoop();
+      audioCtxRef.current?.close();
+    };
+  }, [stopLoop]);
 
   const handlePlayPause = () => {
     if (isPlaying) {
-      stopPlayback();
+      stopLoop();
+      setIsPlaying(false);
+      setCurrentBeat(-1);
+      beatRef.current = 0;
     } else {
-      startPlayback();
+      setIsPlaying(true);
+      startLoop();
     }
   };
 
-  const handleNextPattern = () => {
+  const handleNext = () => {
+    beatRef.current = 0;
     setPattern(generatePattern());
-    // Keep playing at same BPM if already playing
-  };
-
-  const handleBpmChange = (value: number[]) => {
-    setBpm(value[0]);
-    // If playing, the change will take effect on the next beat cycle
-    // We don't restart the loop immediately
-  };
-
-  const handleBpmInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value >= 40 && value <= 200) {
-      setBpm(value);
-    }
-  };
-
-  // Initialize audio context on mount
-  useEffect(() => {
-    initAudioContext();
-  }, [initAudioContext]);
-
-  // Update interval when BPM changes during playback
-  useEffect(() => {
     if (isPlaying) {
-      // Stop current interval
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      
-      // Start new interval with updated BPM
-      const interval = 60000 / bpm;
-      let beatIndex = (currentBeat + 1) % 8;
-      
-      const tick = () => {
-        setCurrentBeat(beatIndex);
-        
-        if (audioContextRef.current) {
-          playClick(audioContextRef.current, pattern[beatIndex].type);
-        }
-        
-        beatIndex = (beatIndex + 1) % 8;
-      };
-      
-      intervalRef.current = setInterval(tick, interval);
+      // Restart loop so it picks up new pattern immediately
+      startLoop();
     }
-  }, [bpm, isPlaying, currentBeat, pattern]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopPlayback();
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, [stopPlayback]);
-
-  const getBeatSquareClassName = (index: number, beat: Beat) => {
-    const isCurrentBeat = currentBeat === index;
-    const baseClasses = "w-12 h-12 sm:w-16 sm:h-16 border-2 rounded-lg transition-all duration-150 flex-shrink-0";
-    
-    if (isCurrentBeat) {
-      return `${baseClasses} border-primary shadow-lg scale-110 ring-2 ring-primary/50`;
-    }
-    
-    return `${baseClasses} border-muted`;
   };
 
-  const getBeatSquareStyle = (beat: Beat) => {
-    switch (beat.type) {
-      case "full":
-        return {
-          background: "hsl(var(--primary))",
-        };
-      case "half":
-        return {
-          background: `linear-gradient(to right, hsl(var(--primary)) 50%, hsl(var(--muted)) 50%)`,
-        };
-      case "quarter":
-        return {
-          background: `linear-gradient(to right, hsl(var(--primary)) 25%, hsl(var(--muted)) 25%)`,
-        };
-      default:
-        return {};
-    }
+  const handleBpmSlider = (value: number[]) => setBpm(value[0]);
+
+  const handleBpmInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseInt(e.target.value, 10);
+    if (!isNaN(v) && v >= 40 && v <= 200) setBpm(v);
   };
 
   return (
@@ -242,17 +156,14 @@ export function RhythmTrainer() {
         </p>
       </div>
 
-      {/* BPM Controls */}
-      <div className="mb-8 space-y-4">
-        <label htmlFor="bpm-slider" className="text-sm font-medium">
-          BPM: {bpm}
-        </label>
+      {/* BPM */}
+      <div className="mb-8 space-y-3">
+        <label className="text-sm font-medium">BPM: {bpm}</label>
         <div className="flex items-center gap-4">
           <Slider
-            id="bpm-slider"
             data-testid="bpm-slider"
             value={[bpm]}
-            onValueChange={handleBpmChange}
+            onValueChange={handleBpmSlider}
             min={40}
             max={200}
             step={1}
@@ -262,7 +173,7 @@ export function RhythmTrainer() {
             data-testid="bpm-input"
             type="number"
             value={bpm}
-            onChange={handleBpmInputChange}
+            onChange={handleBpmInput}
             min={40}
             max={200}
             className="w-20 px-3 py-1.5 text-sm border rounded-md bg-background outline-none focus:ring-1 focus:ring-primary"
@@ -270,41 +181,59 @@ export function RhythmTrainer() {
         </div>
       </div>
 
-      {/* Beat Display */}
+      {/* Beat squares */}
       <div className="mb-8">
-        <div 
-          className="flex justify-center gap-2 sm:gap-4 mb-4 flex-wrap"
-          data-testid="rhythm-display"
-        >
-          {pattern.map((beat, index) => (
-            <div
-              key={index}
-              className={getBeatSquareClassName(index, beat)}
-              style={getBeatSquareStyle(beat)}
-              data-testid={`beat-${index}`}
-              title={`Beat ${index + 1}: ${beat.type}`}
-            />
-          ))}
+        <div className="flex justify-center gap-2 sm:gap-3 mb-4" data-testid="rhythm-display">
+          {pattern.map((beat, i) => {
+            const active = currentBeat === i;
+            const fillPct = beat.type === "full" ? 100 : beat.type === "half" ? 50 : 25;
+            return (
+              <div
+                key={i}
+                data-testid={`beat-${i}`}
+                title={`Beat ${i + 1}: ${beat.type}`}
+                className={`
+                  w-10 h-10 sm:w-14 sm:h-14 rounded-lg border-2 overflow-hidden
+                  transition-all duration-100 flex-shrink-0
+                  ${active
+                    ? "border-primary ring-2 ring-primary/50 scale-110 shadow-lg"
+                    : "border-border"
+                  }
+                `}
+              >
+                <div className="w-full h-full flex">
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${fillPct}%` }}
+                  />
+                  <div
+                    className="h-full bg-muted"
+                    style={{ width: `${100 - fillPct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
-        
+
         {/* Legend */}
-        <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded border" style={{ background: "hsl(var(--primary))" }} />
+        <div className="flex justify-center gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded border bg-primary" />
             <span>Full</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-4 h-4 rounded border" 
-              style={{ background: "linear-gradient(to right, hsl(var(--primary)) 50%, hsl(var(--muted)) 50%)" }} 
-            />
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded border overflow-hidden flex">
+              <div className="w-1/2 h-full bg-primary" />
+              <div className="w-1/2 h-full bg-muted" />
+            </div>
             <span>Half</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-4 h-4 rounded border" 
-              style={{ background: "linear-gradient(to right, hsl(var(--primary)) 25%, hsl(var(--muted)) 25%)" }} 
-            />
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded border overflow-hidden flex">
+              <div className="w-1/4 h-full bg-primary" />
+              <div className="w-3/4 h-full bg-muted" />
+            </div>
             <span>Quarter</span>
           </div>
         </div>
@@ -319,26 +248,18 @@ export function RhythmTrainer() {
           className="min-w-[120px]"
         >
           {isPlaying ? (
-            <>
-              <Pause className="w-4 h-4 mr-2" />
-              Pause
-            </>
+            <><Pause className="w-4 h-4 mr-2" /> Pause</>
           ) : (
-            <>
-              <Play className="w-4 h-4 mr-2" />
-              Play
-            </>
+            <><Play className="w-4 h-4 mr-2" /> Play</>
           )}
         </Button>
-        
         <Button
-          onClick={handleNextPattern}
+          onClick={handleNext}
           variant="outline"
           size="lg"
           data-testid="next-btn"
         >
-          <Shuffle className="w-4 h-4 mr-2" />
-          Next Pattern
+          <Shuffle className="w-4 h-4 mr-2" /> Next
         </Button>
       </div>
     </div>
