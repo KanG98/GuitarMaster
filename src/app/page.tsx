@@ -7,6 +7,7 @@ import { SongDetail } from "@/components/songs/SongDetail";
 import { EarTrainer } from "@/components/tools/EarTrainer";
 import { ChordLibrary } from "@/components/tools/ChordLibrary";
 import { DiatonicQuiz } from "@/components/tools/DiatonicQuiz";
+import { RhythmTrainer } from "@/components/tools/RhythmTrainer";
 import { useSongManager } from "@/hooks/useSongManager";
 import { SongRecord } from "@/lib/fileService";
 
@@ -49,6 +50,7 @@ export default function Home() {
         {currentTool === "earTrainer" && <EarTrainer />}
         {currentTool === "chordLibrary" && <ChordLibrary />}
         {currentTool === "theory" && <DiatonicQuiz />}
+        {currentTool === "rhythm" && <RhythmTrainer />}
       </main>
     </div>
   );
