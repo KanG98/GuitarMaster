@@ -138,19 +138,19 @@ function drawRest(value: NoteValue, cx: number, cy: number, key: string, isActiv
   ) : null;
 
   if (value === "rest-whole") {
-    // Filled rectangle hanging below line
+    // Filled rectangle hanging BELOW the staff line
     return (
       <g key={key} style={{ color }}>
-        <rect x={cx - 8} y={cy - 4} width={16} height={6} fill="currentColor" />
+        <rect x={cx - 8} y={cy} width={16} height={6} fill="currentColor" />
         {highlight}
       </g>
     );
   }
   if (value === "rest-half") {
-    // Filled rectangle sitting on line
+    // Filled rectangle sitting ON TOP of the staff line
     return (
       <g key={key} style={{ color }}>
-        <rect x={cx - 8} y={cy - 2} width={16} height={6} fill="currentColor" />
+        <rect x={cx - 8} y={cy - 6} width={16} height={6} fill="currentColor" />
         {highlight}
       </g>
     );
@@ -226,6 +226,11 @@ function RhythmRow({ notes, globalIndexOffset, activeIndex, barLineAfterFirst }:
   }
 
   const elements: React.ReactElement[] = [];
+
+  // Staff line
+  elements.push(
+    <line key="staff-line" x1={padding - 4} y1={staffY} x2={width - padding + 4} y2={staffY} stroke="currentColor" strokeWidth={1} opacity={0.2} />
+  );
 
   // Bar line
   if (barLineX !== null) {
@@ -484,11 +489,12 @@ function LegendSvg({ type }: { type: NoteValue }) {
     );
   }
 
-  // Rests
+  // Rests — with staff line for context
   if (type === "rest-whole") {
     return (
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
-        <rect x={cx - 8} y={cy - 4} width={16} height={6} fill="currentColor" />
+        <line x1={4} y1={cy} x2={w - 4} y2={cy} stroke="currentColor" strokeWidth={0.8} opacity={0.25} />
+        <rect x={cx - 8} y={cy} width={16} height={6} fill="currentColor" />
       </svg>
     );
   }
@@ -496,7 +502,8 @@ function LegendSvg({ type }: { type: NoteValue }) {
   if (type === "rest-half") {
     return (
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
-        <rect x={cx - 8} y={cy - 2} width={16} height={6} fill="currentColor" />
+        <line x1={4} y1={cy} x2={w - 4} y2={cy} stroke="currentColor" strokeWidth={0.8} opacity={0.25} />
+        <rect x={cx - 8} y={cy - 6} width={16} height={6} fill="currentColor" />
       </svg>
     );
   }
