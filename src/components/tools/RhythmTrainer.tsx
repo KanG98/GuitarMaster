@@ -339,35 +339,27 @@ export function RhythmTrainer() {
       <div className="mb-8">
         {mode === "beats" ? (
           <>
-            {/* Beat squares */}
+            {/* Beat notes */}
             <div className="flex justify-center gap-2 sm:gap-3 mb-4" data-testid="rhythm-display">
               {pattern.map((beat, i) => {
                 const active = currentBeat === i;
-                const fillPct = beat.type === "full" ? 100 : beat.type === "half" ? 50 : 25;
+                const symbol = beat.type === "full" ? "𝅝" : beat.type === "half" ? "𝅗𝅥" : "♩";
                 return (
                   <div
                     key={i}
                     data-testid={`beat-${i}`}
                     title={`Beat ${i + 1}: ${beat.type}`}
                     className={`
-                      w-10 h-10 sm:w-14 sm:h-14 rounded-lg border-2 overflow-hidden
+                      w-10 h-10 sm:w-14 sm:h-14 rounded-lg border-2
                       transition-all duration-100 flex-shrink-0
+                      flex items-center justify-center text-2xl sm:text-3xl
                       ${active
-                        ? "border-primary ring-2 ring-primary/50 scale-110 shadow-lg"
-                        : "border-border"
+                        ? "border-primary ring-2 ring-primary/50 scale-110 shadow-lg bg-primary text-primary-foreground"
+                        : "border-border bg-muted text-foreground"
                       }
                     `}
                   >
-                    <div className="w-full h-full flex">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${fillPct}%` }}
-                      />
-                      <div
-                        className="h-full bg-muted"
-                        style={{ width: `${100 - fillPct}%` }}
-                      />
-                    </div>
+                    {symbol}
                   </div>
                 );
               })}
@@ -376,21 +368,15 @@ export function RhythmTrainer() {
             {/* Legend */}
             <div className="flex justify-center gap-6 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded border bg-primary" />
+                <span className="text-lg">𝅝</span>
                 <span>Full</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded border overflow-hidden flex">
-                  <div className="w-1/2 h-full bg-primary" />
-                  <div className="w-1/2 h-full bg-muted" />
-                </div>
+                <span className="text-lg">𝅗𝅥</span>
                 <span>Half</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded border overflow-hidden flex">
-                  <div className="w-1/4 h-full bg-primary" />
-                  <div className="w-3/4 h-full bg-muted" />
-                </div>
+                <span className="text-lg">♩</span>
                 <span>Quarter</span>
               </div>
             </div>
