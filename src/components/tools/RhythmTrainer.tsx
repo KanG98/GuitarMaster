@@ -14,7 +14,12 @@ type NoteValue =
   | "quarter."
   | "eighth"
   | "eighth."
-  | "sixteenth";
+  | "sixteenth"
+  | "rest-whole"
+  | "rest-half"
+  | "rest-quarter"
+  | "rest-eighth"
+  | "rest-sixteenth";
 type SoundMode = "metronome" | "rhythm";
 
 interface RhythmNote {
@@ -31,10 +36,20 @@ const NOTE_BEATS: Record<NoteValue, number> = {
   eighth: 0.5,
   "eighth.": 0.75,
   sixteenth: 0.25,
+  "rest-whole": 4,
+  "rest-half": 2,
+  "rest-quarter": 1,
+  "rest-eighth": 0.5,
+  "rest-sixteenth": 0.25,
 };
+
+function isRest(v: NoteValue): boolean {
+  return v.startsWith("rest-");
+}
 
 // For beaming: is this note sub-beat (eighth or smaller)?
 function isBeamable(v: NoteValue): boolean {
+  if (isRest(v)) return false;
   return v === "eighth" || v === "eighth." || v === "sixteenth";
 }
 
@@ -50,14 +65,14 @@ function generateRhythmBar(): RhythmNote[] {
 
   while (remaining > 0) {
     const possible: NoteValue[] = [];
-    if (remaining >= 4) possible.push("whole");
+    if (remaining >= 4) { possible.push("whole"); possible.push("rest-whole"); }
     if (remaining >= 3) possible.push("half.");
-    if (remaining >= 2) possible.push("half");
+    if (remaining >= 2) { possible.push("half"); possible.push("rest-half"); }
     if (remaining >= 1.5) possible.push("quarter.");
-    if (remaining >= 1) possible.push("quarter");
+    if (remaining >= 1) { possible.push("quarter"); possible.push("rest-quarter"); }
     if (remaining >= 0.75) possible.push("eighth.");
-    if (remaining >= 0.5) possible.push("eighth");
-    if (remaining >= 0.25) possible.push("sixteenth");
+    if (remaining >= 0.5) { possible.push("eighth"); possible.push("rest-eighth"); }
+    if (remaining >= 0.25) { possible.push("sixteenth"); possible.push("rest-sixteenth"); }
 
     const chosen = possible[Math.floor(Math.random() * possible.length)];
     const beats = NOTE_BEATS[chosen];
@@ -116,6 +131,67 @@ function isDotted(v: NoteValue): boolean {
   return v.endsWith(".");
 }
 
+function drawRest(value: NoteValue, cx: number, cy: number, key: string, isActive: boolean): React.ReactElement {
+  const color = isActive ? "var(--primary)" : "currentColor";
+  const highlight = isActive ? (
+    <circle cx={cx} cy={cy} r={10} fill="currentColor" opacity={0.15} />
+  ) : null;
+
+  if (value === "rest-whole") {
+    // Filled rectangle hanging below line
+    return (
+      <g key={key} style={{ color }}>
+        <rect x={cx - 8} y={cy - 4} width={16} height={6} fill="currentColor" />
+        {highlight}
+      </g>
+    );
+  }
+  if (value === "rest-half") {
+    // Filled rectangle sitting on line
+    return (
+      <g key={key} style={{ color }}>
+        <rect x={cx - 8} y={cy - 2} width={16} height={6} fill="currentColor" />
+        {highlight}
+      </g>
+    );
+  }
+  if (value === "rest-quarter") {
+    // Zigzag shape for quarter rest
+    return (
+      <g key={key} style={{ color }}>
+        <path
+          d={`M${cx - 3},${cy - 12} l6,6 l-6,6 l6,6 l-6,6`}
+          stroke="currentColor"
+          strokeWidth={2.5}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {highlight}
+      </g>
+    );
+  }
+  if (value === "rest-eighth") {
+    // Dot with angled line
+    return (
+      <g key={key} style={{ color }}>
+        <circle cx={cx + 2} cy={cy - 6} r={2.5} fill="currentColor" />
+        <line x1={cx + 2} y1={cy - 6} x2={cx - 4} y2={cy + 8} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+        {highlight}
+      </g>
+    );
+  }
+  // rest-sixteenth: two dots with angled line
+  return (
+    <g key={key} style={{ color }}>
+      <circle cx={cx + 2} cy={cy - 8} r={2.5} fill="currentColor" />
+      <circle cx={cx + 4} cy={cy - 2} r={2.5} fill="currentColor" />
+      <line x1={cx + 2} y1={cy - 8} x2={cx - 4} y2={cy + 8} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      {highlight}
+    </g>
+  );
+}
+
 interface RowProps {
   notes: RhythmNote[];
   globalIndexOffset: number;
@@ -169,6 +245,13 @@ function RhythmRow({ notes, globalIndexOffset, activeIndex, barLineAfterFirst }:
     const gi = globalIndexOffset + i;
     const isActive = activeIndex === gi;
     const color = isActive ? "var(--primary)" : "currentColor";
+
+    // Rests
+    if (isRest(note.value)) {
+      elements.push(drawRest(note.value, x, staffY, `r-${gi}`, isActive));
+      drawn.add(i);
+      continue;
+    }
 
     // Try to form a beamed group of sub-beat notes
     if (isBeamable(note.value)) {
@@ -408,7 +491,7 @@ export function RhythmTrainer() {
       const note = sequence[noteIdx];
 
       setCurrentNote(noteIdx);
-      if (soundModeRef.current === "rhythm") {
+      if (soundModeRef.current === "rhythm" && !isRest(note.value)) {
         playClick(ctx, 800, 0.4);
       }
 
@@ -571,7 +654,7 @@ export function RhythmTrainer() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-8">
+      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-4">
         {([
           ["Whole", 4],
           ["Half", 2],
@@ -583,6 +666,21 @@ export function RhythmTrainer() {
           ["16th", 0.25],
         ] as [string, number][]).map(([label, beats]) => (
           <div key={label} className="flex items-center gap-1">
+            <span className="font-medium">{label}</span>
+            <span>({beats})</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-8">
+        <span className="font-medium text-muted-foreground/70">Rests:</span>
+        {([
+          ["Whole", 4],
+          ["Half", 2],
+          ["Quarter", 1],
+          ["Eighth", 0.5],
+          ["16th", 0.25],
+        ] as [string, number][]).map(([label, beats]) => (
+          <div key={`rest-${label}`} className="flex items-center gap-1">
             <span className="font-medium">{label}</span>
             <span>({beats})</span>
           </div>

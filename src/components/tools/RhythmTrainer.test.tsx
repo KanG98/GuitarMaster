@@ -115,17 +115,19 @@ describe("RhythmTrainer", () => {
     expect(displays.length).toBe(2);
   });
 
-  it("shows legend with note types including dotted", () => {
+  it("shows legend with note types including dotted and rests", () => {
     render(<RhythmTrainer />);
 
-    expect(screen.getByText("Whole")).toBeInTheDocument();
-    expect(screen.getByText("Half")).toBeInTheDocument();
+    // Notes appear in both note and rest legends
+    expect(screen.getAllByText("Whole").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Half").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Half·")).toBeInTheDocument();
-    expect(screen.getByText("Quarter")).toBeInTheDocument();
+    expect(screen.getAllByText("Quarter").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Quarter·")).toBeInTheDocument();
-    expect(screen.getByText("Eighth")).toBeInTheDocument();
+    expect(screen.getAllByText("Eighth").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Eighth·")).toBeInTheDocument();
-    expect(screen.getByText("16th")).toBeInTheDocument();
+    expect(screen.getAllByText("16th").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Rests:")).toBeInTheDocument();
   });
 
   it("shows count-in when playing", async () => {
