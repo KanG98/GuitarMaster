@@ -285,7 +285,7 @@ describe("RhythmTrainer", () => {
     expect(screen.getByTestId("mode-reading")).toBeInTheDocument();
     
     // Check for legend
-    expect(screen.getByText("Full")).toBeInTheDocument();
+    expect(screen.getByText("Whole")).toBeInTheDocument();
     expect(screen.getByText("Half")).toBeInTheDocument();
     expect(screen.getByText("Quarter")).toBeInTheDocument();
   });

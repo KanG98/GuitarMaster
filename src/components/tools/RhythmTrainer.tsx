@@ -5,6 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Play, Pause, Shuffle } from "lucide-react";
 
+/* ── SVG Note Icons ── */
+function NoteIcon({ type, className = "" }: { type: BeatType; className?: string }) {
+  const svgProps = {
+    viewBox: "0 0 40 64",
+    className: `${className}`,
+    fill: "currentColor",
+    xmlns: "http://www.w3.org/2000/svg",
+  };
+
+  if (type === "full") {
+    // Whole note: open oval, no stem
+    return (
+      <svg {...svgProps} viewBox="0 0 40 40">
+        <ellipse cx="20" cy="20" rx="12" ry="8" stroke="currentColor" strokeWidth="3" fill="none" transform="rotate(-15 20 20)" />
+        <ellipse cx="20" cy="20" rx="4" ry="7" fill="currentColor" transform="rotate(-15 20 20)" />
+      </svg>
+    );
+  }
+
+  if (type === "half") {
+    // Half note: open notehead + stem
+    return (
+      <svg {...svgProps}>
+        <line x1="29" y1="8" x2="29" y2="42" stroke="currentColor" strokeWidth="2.5" />
+        <ellipse cx="20" cy="42" rx="11" ry="7" stroke="currentColor" strokeWidth="2.5" fill="none" transform="rotate(-15 20 42)" />
+      </svg>
+    );
+  }
+
+  // Quarter note: filled notehead + stem
+  return (
+    <svg {...svgProps}>
+      <line x1="29" y1="8" x2="29" y2="42" stroke="currentColor" strokeWidth="2.5" />
+      <ellipse cx="20" cy="42" rx="11" ry="7" fill="currentColor" transform="rotate(-15 20 42)" />
+    </svg>
+  );
+}
+
 type BeatType = "full" | "half" | "quarter";
 type TrainerMode = "beats" | "reading";
 type NoteValue = "whole" | "half" | "quarter" | "eighth";
@@ -343,23 +381,22 @@ export function RhythmTrainer() {
             <div className="flex justify-center gap-2 sm:gap-3 mb-4" data-testid="rhythm-display">
               {pattern.map((beat, i) => {
                 const active = currentBeat === i;
-                const symbol = beat.type === "full" ? "𝅝" : beat.type === "half" ? "𝅗𝅥" : "♩";
                 return (
                   <div
                     key={i}
                     data-testid={`beat-${i}`}
                     title={`Beat ${i + 1}: ${beat.type}`}
                     className={`
-                      w-10 h-10 sm:w-14 sm:h-14 rounded-lg border-2
+                      w-10 h-14 sm:w-14 sm:h-18 rounded-lg border-2
                       transition-all duration-100 flex-shrink-0
-                      flex items-center justify-center text-2xl sm:text-3xl
+                      flex items-center justify-center
                       ${active
                         ? "border-primary ring-2 ring-primary/50 scale-110 shadow-lg bg-primary text-primary-foreground"
                         : "border-border bg-muted text-foreground"
                       }
                     `}
                   >
-                    {symbol}
+                    <NoteIcon type={beat.type} className="w-8 h-10 sm:w-10 sm:h-12" />
                   </div>
                 );
               })}
@@ -368,15 +405,15 @@ export function RhythmTrainer() {
             {/* Legend */}
             <div className="flex justify-center gap-6 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">𝅝</span>
-                <span>Full</span>
+                <NoteIcon type="full" className="w-5 h-5" />
+                <span>Whole</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">𝅗𝅥</span>
+                <NoteIcon type="half" className="w-4 h-5" />
                 <span>Half</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-lg">♩</span>
+                <NoteIcon type="quarter" className="w-4 h-5" />
                 <span>Quarter</span>
               </div>
             </div>
