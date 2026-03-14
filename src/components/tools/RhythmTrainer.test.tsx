@@ -115,19 +115,29 @@ describe("RhythmTrainer", () => {
     expect(displays.length).toBe(2);
   });
 
-  it("shows legend with note types including dotted and rests", () => {
+  it("shows organized legend with SVG icons for notes and rests", () => {
     render(<RhythmTrainer />);
 
-    // Notes appear in both note and rest legends
-    expect(screen.getAllByText("Whole").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Half").length).toBeGreaterThanOrEqual(1);
+    const legend = screen.getByTestId("legend");
+    expect(legend).toBeInTheDocument();
+
+    // Section headers
+    expect(screen.getByText("Notes")).toBeInTheDocument();
+    expect(screen.getByText("Rests")).toBeInTheDocument();
+
+    // Note labels (appear in both sections)
+    expect(screen.getAllByText("Whole").length).toBe(2);
+    expect(screen.getAllByText("Half").length).toBe(2);
     expect(screen.getByText("Half·")).toBeInTheDocument();
-    expect(screen.getAllByText("Quarter").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Quarter").length).toBe(2);
     expect(screen.getByText("Quarter·")).toBeInTheDocument();
-    expect(screen.getAllByText("Eighth").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Eighth").length).toBe(2);
     expect(screen.getByText("Eighth·")).toBeInTheDocument();
-    expect(screen.getAllByText("16th").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Rests:")).toBeInTheDocument();
+    expect(screen.getAllByText("16th").length).toBe(2);
+
+    // SVG icons rendered
+    const svgs = legend.querySelectorAll("svg");
+    expect(svgs.length).toBe(13); // 8 notes + 5 rests
   });
 
   it("shows count-in when playing", async () => {

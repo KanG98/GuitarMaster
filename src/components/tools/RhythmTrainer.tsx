@@ -414,6 +414,120 @@ function playClick(ctx: AudioContext, freq = 800, vol = 0.4) {
 
 const COUNT_IN_BEATS = 4;
 
+/* ── Legend Item with mini SVG ── */
+function LegendItem({ type, label, beats }: { type: NoteValue; label: string; beats: number }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="w-8 h-10 flex items-center justify-center">
+        <LegendSvg type={type} />
+      </div>
+      <span className="text-[10px] font-medium text-foreground leading-tight">{label}</span>
+      <span className="text-[10px] text-muted-foreground leading-tight">({beats})</span>
+    </div>
+  );
+}
+
+function LegendSvg({ type }: { type: NoteValue }) {
+  const w = 32;
+  const h = 40;
+  const cx = 16;
+  const cy = 26;
+  const stemTop = 6;
+
+  if (type === "whole") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <ellipse cx={cx} cy={cy} rx={8} ry={5.5} stroke="currentColor" strokeWidth={2} fill="none" transform={`rotate(-15 ${cx} ${cy})`} />
+      </svg>
+    );
+  }
+
+  if (type === "half" || type === "half.") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <ellipse cx={cx - 2} cy={cy} rx={6} ry={4.5} stroke="currentColor" strokeWidth={1.8} fill="none" transform={`rotate(-15 ${cx - 2} ${cy})`} />
+        <line x1={cx + 3.5} y1={cy} x2={cx + 3.5} y2={stemTop} stroke="currentColor" strokeWidth={1.8} />
+        {type === "half." && <circle cx={cx + 8} cy={cy - 2} r={1.8} fill="currentColor" />}
+      </svg>
+    );
+  }
+
+  if (type === "quarter" || type === "quarter.") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <ellipse cx={cx - 2} cy={cy} rx={6} ry={4.5} fill="currentColor" transform={`rotate(-15 ${cx - 2} ${cy})`} />
+        <line x1={cx + 3.5} y1={cy} x2={cx + 3.5} y2={stemTop} stroke="currentColor" strokeWidth={1.8} />
+        {type === "quarter." && <circle cx={cx + 8} cy={cy - 2} r={1.8} fill="currentColor" />}
+      </svg>
+    );
+  }
+
+  if (type === "eighth" || type === "eighth.") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <ellipse cx={cx - 2} cy={cy} rx={6} ry={4.5} fill="currentColor" transform={`rotate(-15 ${cx - 2} ${cy})`} />
+        <line x1={cx + 3.5} y1={cy} x2={cx + 3.5} y2={stemTop} stroke="currentColor" strokeWidth={1.8} />
+        <path d={`M${cx + 3.5},${stemTop} q7,7 3.5,14`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+        {type === "eighth." && <circle cx={cx + 8} cy={cy - 2} r={1.8} fill="currentColor" />}
+      </svg>
+    );
+  }
+
+  if (type === "sixteenth") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <ellipse cx={cx - 2} cy={cy} rx={6} ry={4.5} fill="currentColor" transform={`rotate(-15 ${cx - 2} ${cy})`} />
+        <line x1={cx + 3.5} y1={cy} x2={cx + 3.5} y2={stemTop} stroke="currentColor" strokeWidth={1.8} />
+        <path d={`M${cx + 3.5},${stemTop} q7,5 3.5,12`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+        <path d={`M${cx + 3.5},${stemTop + 5} q7,5 3.5,12`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+      </svg>
+    );
+  }
+
+  // Rests
+  if (type === "rest-whole") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <rect x={cx - 8} y={cy - 4} width={16} height={6} fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (type === "rest-half") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <rect x={cx - 8} y={cy - 2} width={16} height={6} fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (type === "rest-quarter") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <path d={`M${cx - 3},${cy - 12} l6,6 l-6,6 l6,6 l-6,6`} stroke="currentColor" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (type === "rest-eighth") {
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+        <circle cx={cx + 2} cy={cy - 6} r={2.5} fill="currentColor" />
+        <line x1={cx + 2} y1={cy - 6} x2={cx - 4} y2={cy + 8} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  // rest-sixteenth
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" fill="currentColor">
+      <circle cx={cx + 2} cy={cy - 8} r={2.5} fill="currentColor" />
+      <circle cx={cx + 4} cy={cy - 2} r={2.5} fill="currentColor" />
+      <line x1={cx + 2} y1={cy - 8} x2={cx - 4} y2={cy + 8} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /* ── Main Component ── */
 export function RhythmTrainer() {
   const [bpm, setBpm] = useState(80);
@@ -654,37 +768,29 @@ export function RhythmTrainer() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-4">
-        {([
-          ["Whole", 4],
-          ["Half", 2],
-          ["Half·", 3],
-          ["Quarter", 1],
-          ["Quarter·", 1.5],
-          ["Eighth", 0.5],
-          ["Eighth·", 0.75],
-          ["16th", 0.25],
-        ] as [string, number][]).map(([label, beats]) => (
-          <div key={label} className="flex items-center gap-1">
-            <span className="font-medium">{label}</span>
-            <span>({beats})</span>
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-8">
-        <span className="font-medium text-muted-foreground/70">Rests:</span>
-        {([
-          ["Whole", 4],
-          ["Half", 2],
-          ["Quarter", 1],
-          ["Eighth", 0.5],
-          ["16th", 0.25],
-        ] as [string, number][]).map(([label, beats]) => (
-          <div key={`rest-${label}`} className="flex items-center gap-1">
-            <span className="font-medium">{label}</span>
-            <span>({beats})</span>
-          </div>
-        ))}
+      <div className="mb-8 border rounded-lg p-4 bg-muted/30" data-testid="legend">
+        {/* Notes Row */}
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-3">
+          <span className="text-xs font-semibold text-muted-foreground w-full text-center mb-1">Notes</span>
+          <LegendItem type="whole" label="Whole" beats={4} />
+          <LegendItem type="half" label="Half" beats={2} />
+          <LegendItem type="half." label="Half·" beats={3} />
+          <LegendItem type="quarter" label="Quarter" beats={1} />
+          <LegendItem type="quarter." label="Quarter·" beats={1.5} />
+          <LegendItem type="eighth" label="Eighth" beats={0.5} />
+          <LegendItem type="eighth." label="Eighth·" beats={0.75} />
+          <LegendItem type="sixteenth" label="16th" beats={0.25} />
+        </div>
+        <div className="border-t border-border my-2" />
+        {/* Rests Row */}
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-3">
+          <span className="text-xs font-semibold text-muted-foreground w-full text-center mb-1">Rests</span>
+          <LegendItem type="rest-whole" label="Whole" beats={4} />
+          <LegendItem type="rest-half" label="Half" beats={2} />
+          <LegendItem type="rest-quarter" label="Quarter" beats={1} />
+          <LegendItem type="rest-eighth" label="Eighth" beats={0.5} />
+          <LegendItem type="rest-sixteenth" label="16th" beats={0.25} />
+        </div>
       </div>
 
       {/* Controls */}
