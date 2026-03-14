@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Shuffle } from "lucide-react";
+import { Play, Pause, Shuffle, Drum, Music } from "lucide-react";
 
 /* ── Note Types & Generation ── */
 type NoteValue = "whole" | "half" | "quarter" | "eighth" | "sixteenth";
-type TrainerMode = "beats" | "reading";
+type SoundMode = "metronome" | "rhythm";
 
 interface RhythmNote {
   value: NoteValue;
@@ -223,7 +223,7 @@ function RhythmStaff({ notes, activeIndex }: { notes: RhythmNote[]; activeIndex:
   );
 }
 
-function playClick(ctx: AudioContext) {
+function playClick(ctx: AudioContext, freq = 800, vol = 0.4) {
   const now = ctx.currentTime;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -231,31 +231,39 @@ function playClick(ctx: AudioContext) {
   osc.connect(gain);
   gain.connect(ctx.destination);
 
-  osc.frequency.value = 800;
+  osc.frequency.value = freq;
   osc.type = "sine";
 
-  gain.gain.setValueAtTime(0.4, now);
+  gain.gain.setValueAtTime(vol, now);
   gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
 
   osc.start(now);
   osc.stop(now + 0.05);
 }
 
+const COUNT_IN_BEATS = 4;
+
 export function RhythmTrainer() {
   const [bpm, setBpm] = useState(80);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentNote, setCurrentNote] = useState(-1);
+  const [countIn, setCountIn] = useState(-1); // -1 = not counting, 0-3 = count-in beat
+  const [soundMode, setSoundMode] = useState<SoundMode>("rhythm");
   const [rhythmSequence, setRhythmSequence] = useState<RhythmNote[]>(() => generateRhythmSequence());
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const metronomeRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const noteRef = useRef(0);
+  const countInRef = useRef(0);
   const rhythmSequenceRef = useRef(rhythmSequence);
   const bpmRef = useRef(bpm);
+  const soundModeRef = useRef(soundMode);
 
   // Keep refs in sync
   rhythmSequenceRef.current = rhythmSequence;
   bpmRef.current = bpm;
+  soundModeRef.current = soundMode;
 
   const getOrCreateCtx = useCallback((): AudioContext => {
     if (!audioCtxRef.current) {
@@ -287,11 +295,20 @@ export function RhythmTrainer() {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    if (metronomeRef.current) {
+      clearInterval(metronomeRef.current);
+      metronomeRef.current = null;
+    }
   }, []);
 
-  const startLoop = useCallback(() => {
-    stopLoop();
-    const ctx = getOrCreateCtx();
+  const startPlayback = useCallback((ctx: AudioContext) => {
+    // Start metronome if in metronome mode
+    if (soundModeRef.current === "metronome") {
+      // Play steady quarter-note clicks
+      const tick = () => playClick(ctx, 600, 0.25);
+      tick();
+      metronomeRef.current = setInterval(tick, 60000 / bpmRef.current);
+    }
 
     const playNextNote = () => {
       const noteIdx = noteRef.current;
@@ -299,7 +316,9 @@ export function RhythmTrainer() {
       const note = sequence[noteIdx];
 
       setCurrentNote(noteIdx);
-      playClick(ctx);
+      if (soundModeRef.current === "rhythm") {
+        playClick(ctx, 800, 0.4);
+      }
 
       const noteDuration = note.beats * (60000 / bpmRef.current);
       noteRef.current = (noteIdx + 1) % sequence.length;
@@ -308,12 +327,45 @@ export function RhythmTrainer() {
     };
 
     playNextNote();
-  }, [getOrCreateCtx, stopLoop]);
+  }, []);
 
-  // Restart when BPM changes during playback
+  const startLoop = useCallback(() => {
+    stopLoop();
+    const ctx = getOrCreateCtx();
+
+    // Count-in: 4 quarter-note beats
+    countInRef.current = 0;
+    setCountIn(0);
+    setCurrentNote(-1);
+    noteRef.current = 0;
+
+    const beatMs = 60000 / bpmRef.current;
+
+    const countInTick = () => {
+      const beat = countInRef.current;
+      setCountIn(beat);
+      // High-pitched count-in click
+      playClick(ctx, 1200, 0.5);
+
+      if (beat < COUNT_IN_BEATS - 1) {
+        countInRef.current = beat + 1;
+        timeoutRef.current = setTimeout(countInTick, beatMs);
+      } else {
+        // Count-in done, start rhythm
+        setCountIn(-1);
+        timeoutRef.current = setTimeout(() => startPlayback(ctx), beatMs);
+      }
+    };
+
+    countInTick();
+  }, [getOrCreateCtx, stopLoop, startPlayback]);
+
+  // Restart when BPM changes during playback (only if already past count-in)
   useEffect(() => {
-    if (isPlaying) {
-      startLoop();
+    if (isPlaying && currentNote >= 0) {
+      stopLoop();
+      const ctx = getOrCreateCtx();
+      startPlayback(ctx);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bpm]);
@@ -331,6 +383,7 @@ export function RhythmTrainer() {
       stopLoop();
       setIsPlaying(false);
       setCurrentNote(-1);
+      setCountIn(-1);
       noteRef.current = 0;
     } else {
       setIsPlaying(true);
@@ -364,6 +417,28 @@ export function RhythmTrainer() {
         </p>
       </div>
 
+      {/* Sound Mode Toggle */}
+      <div className="flex justify-center mb-6">
+        <div className="flex gap-2">
+          <Button
+            variant={soundMode === "metronome" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSoundMode("metronome")}
+            data-testid="sound-metronome"
+          >
+            <Drum className="w-4 h-4 mr-1" /> Metronome
+          </Button>
+          <Button
+            variant={soundMode === "rhythm" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSoundMode("rhythm")}
+            data-testid="sound-rhythm"
+          >
+            <Music className="w-4 h-4 mr-1" /> Rhythm
+          </Button>
+        </div>
+      </div>
+
       {/* BPM */}
       <div className="mb-8 space-y-3">
         <label className="text-sm font-medium">BPM: {bpm}</label>
@@ -388,6 +463,16 @@ export function RhythmTrainer() {
           />
         </div>
       </div>
+
+      {/* Count-in Display */}
+      {countIn >= 0 && (
+        <div className="mb-4 text-center" data-testid="count-in">
+          <div className="text-5xl font-bold text-primary animate-pulse">
+            {countIn + 1}
+          </div>
+          <div className="text-sm text-muted-foreground mt-1">Count in...</div>
+        </div>
+      )}
 
       {/* Rhythm Staff Display */}
       <div className="mb-6 p-4 bg-background border rounded-lg">
