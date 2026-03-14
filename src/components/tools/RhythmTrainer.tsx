@@ -53,7 +53,7 @@ function generateRhythmBar(): RhythmNote[] {
 
 function generateRhythmSequence(): RhythmNote[] {
   // Generate 4 bars
-  return [...generateRhythmBar(), ...generateRhythmBar(), ...generateRhythmBar(), ...generateRhythmBar()];
+  return [...generateRhythmBar(), ...generateRhythmBar(), ...generateRhythmBar()];
 }
 
 /* ── SVG Staff Renderer ── */
