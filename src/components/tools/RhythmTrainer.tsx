@@ -72,29 +72,32 @@ function drawNoteHead(filled: boolean, cx: number, cy: number): React.ReactEleme
 }
 
 function RhythmStaff({ notes, activeIndex }: { notes: RhythmNote[]; activeIndex: number }) {
-  // Layout: proportional spacing based on beat value
   const totalBeats = notes.reduce((s, n) => s + n.beats, 0);
-  const padding = 20;
-  const width = 600;
-  const usable = width - padding * 2;
-  const staffY = 30; // vertical center for noteheads
+  const padding = 24;
+  const minGap = 18; // minimum pixels between notes
+  const staffY = 30;
   const stemH = 28;
 
-  // Compute x positions
-  let beatAccum = 0;
-  const positions = notes.map((n) => {
-    const x = padding + (beatAccum / totalBeats) * usable;
-    beatAccum += n.beats;
-    return x;
-  });
+  // Equal spacing per note, scaled to fit
+  const noteCount = notes.length;
+  const naturalWidth = padding * 2 + noteCount * minGap;
+  const width = Math.max(600, naturalWidth);
+  const usable = width - padding * 2;
+  const gap = usable / noteCount;
 
-  // Find bar lines (every 4 beats)
+  // Compute x positions — evenly spaced
+  const positions = notes.map((_, i) => padding + gap * i + gap * 0.3);
+
+  // Find bar lines (every 4 beats) — positioned between notes
   const barLines: number[] = [];
   let b = 0;
   for (let i = 0; i < notes.length; i++) {
     b += notes[i].beats;
     if (Math.abs(b % 4) < 0.01 && b < totalBeats) {
-      barLines.push(padding + (b / totalBeats) * usable);
+      // Place bar line halfway between this note's end and next note's start
+      const thisEnd = positions[i] + gap * 0.4;
+      const nextStart = i + 1 < notes.length ? positions[i + 1] - gap * 0.2 : thisEnd + gap * 0.3;
+      barLines.push((thisEnd + nextStart) / 2);
     }
   }
 
@@ -213,13 +216,15 @@ function RhythmStaff({ notes, activeIndex }: { notes: RhythmNote[]; activeIndex:
   }
 
   return (
-    <svg
-      viewBox={`0 0 ${width} 65`}
-      className="w-full h-auto"
-      data-testid="rhythm-display"
-    >
-      {elements}
-    </svg>
+    <div className="overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${width} 65`}
+        className="w-full h-auto min-w-[400px]"
+        data-testid="rhythm-display"
+      >
+        {elements}
+      </svg>
+    </div>
   );
 }
 
