@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RhythmTrainer } from "./RhythmTrainer";
 
-// Mock AudioContext for testing
 const mockAudioContext = {
   createOscillator: jest.fn(() => ({
     connect: jest.fn(),
@@ -44,9 +43,10 @@ describe("RhythmTrainer", () => {
     jest.useFakeTimers();
   });
 
-  it("renders rhythm staff display", () => {
+  it("renders two rows of rhythm notation", () => {
     render(<RhythmTrainer />);
-    expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
+    const displays = screen.getAllByTestId("rhythm-display");
+    expect(displays.length).toBe(2);
   });
 
   it("renders all required UI elements", () => {
@@ -57,19 +57,23 @@ describe("RhythmTrainer", () => {
     expect(screen.getByTestId("bpm-input")).toBeInTheDocument();
     expect(screen.getByTestId("play-btn")).toBeInTheDocument();
     expect(screen.getByTestId("next-btn")).toBeInTheDocument();
-    expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
+  });
+
+  it("renders sound mode toggle", () => {
+    render(<RhythmTrainer />);
+
+    expect(screen.getByTestId("sound-metronome")).toBeInTheDocument();
+    expect(screen.getByTestId("sound-rhythm")).toBeInTheDocument();
   });
 
   it("displays BPM controls with default value", () => {
     render(<RhythmTrainer />);
-
     const input = screen.getByTestId("bpm-input");
     expect(input).toHaveValue(80);
   });
 
   it("changes BPM when input value changes", () => {
     render(<RhythmTrainer />);
-
     const input = screen.getByTestId("bpm-input");
     fireEvent.change(input, { target: { value: "120" } });
     expect(input).toHaveValue(120);
@@ -77,7 +81,6 @@ describe("RhythmTrainer", () => {
 
   it("ignores invalid BPM input values", () => {
     render(<RhythmTrainer />);
-
     const input = screen.getByTestId("bpm-input");
 
     fireEvent.change(input, { target: { value: "30" } });
@@ -89,7 +92,6 @@ describe("RhythmTrainer", () => {
 
   it("toggles play button text between Play and Pause", async () => {
     render(<RhythmTrainer />);
-
     const playButton = screen.getByTestId("play-btn");
     expect(playButton).toHaveTextContent("Play");
 
@@ -106,35 +108,43 @@ describe("RhythmTrainer", () => {
 
   it("generates new pattern when Next button is clicked", () => {
     render(<RhythmTrainer />);
-
     const nextButton = screen.getByTestId("next-btn");
     fireEvent.click(nextButton);
 
-    // Component should still render after regeneration
-    expect(screen.getByTestId("rhythm-display")).toBeInTheDocument();
-    expect(nextButton).toBeInTheDocument();
+    const displays = screen.getAllByTestId("rhythm-display");
+    expect(displays.length).toBe(2);
   });
 
-  it("shows legend with note types", () => {
+  it("shows legend with note types including dotted", () => {
     render(<RhythmTrainer />);
 
     expect(screen.getByText("Whole")).toBeInTheDocument();
     expect(screen.getByText("Half")).toBeInTheDocument();
+    expect(screen.getByText("Half·")).toBeInTheDocument();
     expect(screen.getByText("Quarter")).toBeInTheDocument();
+    expect(screen.getByText("Quarter·")).toBeInTheDocument();
     expect(screen.getByText("Eighth")).toBeInTheDocument();
+    expect(screen.getByText("Eighth·")).toBeInTheDocument();
     expect(screen.getByText("16th")).toBeInTheDocument();
+  });
+
+  it("shows count-in when playing", async () => {
+    render(<RhythmTrainer />);
+    const playButton = screen.getByTestId("play-btn");
+    fireEvent.click(playButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("count-in")).toBeInTheDocument();
+    });
   });
 
   it("cleans up timers on unmount", () => {
     const { unmount } = render(<RhythmTrainer />);
-
     const playButton = screen.getByTestId("play-btn");
     fireEvent.click(playButton);
 
     expect(jest.getTimerCount()).toBeGreaterThan(0);
-
     unmount();
-
     jest.runOnlyPendingTimers();
     expect(jest.getTimerCount()).toBe(0);
   });

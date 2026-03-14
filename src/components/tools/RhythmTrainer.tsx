@@ -6,7 +6,15 @@ import { Slider } from "@/components/ui/slider";
 import { Play, Pause, Shuffle, Drum, Music } from "lucide-react";
 
 /* ── Note Types & Generation ── */
-type NoteValue = "whole" | "half" | "quarter" | "eighth" | "sixteenth";
+type NoteValue =
+  | "whole"
+  | "half"
+  | "half."
+  | "quarter"
+  | "quarter."
+  | "eighth"
+  | "eighth."
+  | "sixteenth";
 type SoundMode = "metronome" | "rhythm";
 
 interface RhythmNote {
@@ -17,28 +25,37 @@ interface RhythmNote {
 const NOTE_BEATS: Record<NoteValue, number> = {
   whole: 4,
   half: 2,
+  "half.": 3,
   quarter: 1,
+  "quarter.": 1.5,
   eighth: 0.5,
+  "eighth.": 0.75,
   sixteenth: 0.25,
 };
 
-const NOTE_LABELS: Record<NoteValue, string> = {
-  whole: "Whole",
-  half: "Half",
-  quarter: "Quarter",
-  eighth: "Eighth",
-  sixteenth: "16th",
-};
+// For beaming: is this note sub-beat (eighth or smaller)?
+function isBeamable(v: NoteValue): boolean {
+  return v === "eighth" || v === "eighth." || v === "sixteenth";
+}
+
+// How many beams does this note get?
+function beamCount(v: NoteValue): number {
+  if (v === "sixteenth") return 2;
+  return 1; // eighth, eighth.
+}
 
 function generateRhythmBar(): RhythmNote[] {
   const notes: RhythmNote[] = [];
-  let remaining = 4; // one bar of 4/4
+  let remaining = 4;
 
   while (remaining > 0) {
     const possible: NoteValue[] = [];
     if (remaining >= 4) possible.push("whole");
+    if (remaining >= 3) possible.push("half.");
     if (remaining >= 2) possible.push("half");
+    if (remaining >= 1.5) possible.push("quarter.");
     if (remaining >= 1) possible.push("quarter");
+    if (remaining >= 0.75) possible.push("eighth.");
     if (remaining >= 0.5) possible.push("eighth");
     if (remaining >= 0.25) possible.push("sixteenth");
 
@@ -52,182 +69,248 @@ function generateRhythmBar(): RhythmNote[] {
 }
 
 function generateRhythmSequence(): RhythmNote[] {
-  // Generate 4 bars
-  return [...generateRhythmBar(), ...generateRhythmBar(), ...generateRhythmBar()];
+  return [
+    ...generateRhythmBar(),
+    ...generateRhythmBar(),
+    ...generateRhythmBar(),
+    ...generateRhythmBar(),
+  ];
 }
 
-/* ── SVG Staff Renderer ── */
-function drawNoteHead(filled: boolean, cx: number, cy: number): React.ReactElement[] {
-  const elems: React.ReactElement[] = [];
+/* ── Split notes into rows by bars ── */
+function splitIntoBars(notes: RhythmNote[]): RhythmNote[][] {
+  const bars: RhythmNote[][] = [];
+  let current: RhythmNote[] = [];
+  let beats = 0;
+
+  for (const n of notes) {
+    current.push(n);
+    beats = Math.round((beats + n.beats) * 100) / 100;
+    if (Math.abs(beats - 4) < 0.01) {
+      bars.push(current);
+      current = [];
+      beats = 0;
+    }
+  }
+  if (current.length > 0) bars.push(current);
+  return bars;
+}
+
+/* ── SVG Row Renderer ── */
+function drawNoteHead(filled: boolean, cx: number, cy: number, key: string): React.ReactElement {
   if (filled) {
-    elems.push(
-      <ellipse key={`nh-${cx}`} cx={cx} cy={cy} rx={6} ry={4.5} fill="currentColor" transform={`rotate(-15 ${cx} ${cy})`} />
-    );
-  } else {
-    elems.push(
-      <ellipse key={`nho-${cx}`} cx={cx} cy={cy} rx={6} ry={4.5} stroke="currentColor" strokeWidth={1.8} fill="none" transform={`rotate(-15 ${cx} ${cy})`} />
+    return (
+      <ellipse key={key} cx={cx} cy={cy} rx={6} ry={4.5} fill="currentColor" transform={`rotate(-15 ${cx} ${cy})`} />
     );
   }
-  return elems;
+  return (
+    <ellipse key={key} cx={cx} cy={cy} rx={6} ry={4.5} stroke="currentColor" strokeWidth={1.8} fill="none" transform={`rotate(-15 ${cx} ${cy})`} />
+  );
 }
 
-function RhythmStaff({ notes, activeIndex }: { notes: RhythmNote[]; activeIndex: number }) {
-  const totalBeats = notes.reduce((s, n) => s + n.beats, 0);
-  const padding = 24;
-  const minGap = 18; // minimum pixels between notes
-  const staffY = 30;
+function drawDot(cx: number, cy: number, key: string): React.ReactElement {
+  return <circle key={key} cx={cx + 10} cy={cy - 2} r={2} fill="currentColor" />;
+}
+
+function isDotted(v: NoteValue): boolean {
+  return v.endsWith(".");
+}
+
+interface RowProps {
+  notes: RhythmNote[];
+  globalIndexOffset: number;
+  activeIndex: number;
+  barLineAfterFirst: boolean; // show bar line between bar 1 and 2
+}
+
+function RhythmRow({ notes, globalIndexOffset, activeIndex, barLineAfterFirst }: RowProps) {
+  const padding = 20;
+  const width = 600;
+  const usable = width - padding * 2;
+  const staffY = 32;
   const stemH = 28;
 
-  // Equal spacing per note, scaled to fit
-  const noteCount = notes.length;
-  const naturalWidth = padding * 2 + noteCount * minGap;
-  const width = Math.max(600, naturalWidth);
-  const usable = width - padding * 2;
-  const gap = usable / noteCount;
+  // Even spacing
+  const gap = usable / notes.length;
+  const positions = notes.map((_, i) => padding + gap * i + gap * 0.35);
 
-  // Compute x positions — evenly spaced
-  const positions = notes.map((_, i) => padding + gap * i + gap * 0.3);
-
-  // Find bar lines (every 4 beats) — positioned between notes
-  const barLines: number[] = [];
-  let b = 0;
-  for (let i = 0; i < notes.length; i++) {
-    b += notes[i].beats;
-    if (Math.abs(b % 4) < 0.01 && b < totalBeats) {
-      // Place bar line halfway between this note's end and next note's start
-      const thisEnd = positions[i] + gap * 0.4;
-      const nextStart = i + 1 < notes.length ? positions[i + 1] - gap * 0.2 : thisEnd + gap * 0.3;
-      barLines.push((thisEnd + nextStart) / 2);
+  // Bar line position (between 2 bars in this row)
+  let barLineX: number | null = null;
+  if (barLineAfterFirst) {
+    let beats = 0;
+    for (let i = 0; i < notes.length; i++) {
+      beats = Math.round((beats + notes[i].beats) * 100) / 100;
+      if (Math.abs(beats - 4) < 0.01 && i < notes.length - 1) {
+        const thisEnd = positions[i] + gap * 0.35;
+        const nextStart = positions[i + 1] - gap * 0.15;
+        barLineX = (thisEnd + nextStart) / 2;
+        break;
+      }
     }
   }
 
-  // Group consecutive eighths/sixteenths for beaming
   const elements: React.ReactElement[] = [];
 
-  // Bar lines
-  barLines.forEach((bx, i) => {
+  // Bar line
+  if (barLineX !== null) {
     elements.push(
-      <line key={`bar-${i}`} x1={bx} y1={staffY - stemH} x2={bx} y2={staffY + 8} stroke="currentColor" strokeWidth={1} opacity={0.3} />
+      <line key="bar" x1={barLineX} y1={staffY - stemH - 2} x2={barLineX} y2={staffY + 8} stroke="currentColor" strokeWidth={1.2} opacity={0.3} />
     );
-  });
+  }
 
-  // Draw notes
+  // Collect beamable groups
+  const drawn = new Set<number>();
+
   for (let i = 0; i < notes.length; i++) {
+    if (drawn.has(i)) continue;
+
     const note = notes[i];
     const x = positions[i];
-    const isActive = activeIndex === i;
+    const gi = globalIndexOffset + i;
+    const isActive = activeIndex === gi;
     const color = isActive ? "var(--primary)" : "currentColor";
-    const groupProps = { style: { color } };
 
-    if (note.value === "whole") {
-      // Open oval with inner cutout
+    // Try to form a beamed group of sub-beat notes
+    if (isBeamable(note.value)) {
+      // Collect consecutive beamable notes
+      const group: { idx: number; x: number; note: RhythmNote; gi: number }[] = [];
+      let j = i;
+      while (j < notes.length && isBeamable(notes[j].value)) {
+        group.push({ idx: j, x: positions[j], note: notes[j], gi: globalIndexOffset + j });
+        j++;
+      }
+
+      if (group.length >= 2) {
+        // Draw beamed group
+        const firstX = group[0].x;
+        const lastX = group[group.length - 1].x;
+        const anyActive = group.some((g) => activeIndex === g.gi);
+        const groupColor = anyActive ? "var(--primary)" : "currentColor";
+
+        const groupElems: React.ReactElement[] = [];
+
+        // Noteheads + stems
+        for (const g of group) {
+          groupElems.push(drawNoteHead(true, g.x, staffY, `nh-${g.gi}`));
+          groupElems.push(
+            <line key={`st-${g.gi}`} x1={g.x + 5.5} y1={staffY} x2={g.x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
+          );
+          if (isDotted(g.note.value)) {
+            groupElems.push(drawDot(g.x, staffY, `dot-${g.gi}`));
+          }
+          drawn.add(g.idx);
+        }
+
+        // Primary beam (all sub-beat notes get at least one beam)
+        groupElems.push(
+          <line key={`beam1-${gi}`} x1={firstX + 5.5} y1={staffY - stemH} x2={lastX + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={3} />
+        );
+
+        // Secondary beam segments for sixteenths
+        for (let k = 0; k < group.length; k++) {
+          if (beamCount(group[k].note.value) >= 2) {
+            // Find consecutive sixteenths in this group
+            const sx = group[k].x;
+            let endK = k;
+            while (endK + 1 < group.length && beamCount(group[endK + 1].note.value) >= 2) {
+              endK++;
+            }
+            if (endK > k) {
+              // Full secondary beam across consecutive sixteenths
+              const ex = group[endK].x;
+              groupElems.push(
+                <line key={`beam2-${gi}-${k}`} x1={sx + 5.5} y1={staffY - stemH + 5} x2={ex + 5.5} y2={staffY - stemH + 5} stroke="currentColor" strokeWidth={2.5} />
+              );
+              k = endK;
+            } else {
+              // Partial beam (stub) for isolated sixteenth
+              const stubDir = k === 0 ? 1 : -1;
+              const stubLen = gap * 0.3;
+              groupElems.push(
+                <line key={`beam2-${gi}-${k}`} x1={sx + 5.5} y1={staffY - stemH + 5} x2={sx + 5.5 + stubDir * stubLen} y2={staffY - stemH + 5} stroke="currentColor" strokeWidth={2.5} />
+              );
+            }
+          }
+        }
+
+        // Active highlight
+        if (anyActive) {
+          groupElems.push(
+            <rect key={`hl-${gi}`} x={firstX - 8} y={staffY - 8} width={lastX - firstX + 16} height={16} rx={4} fill="currentColor" opacity={0.1} />
+          );
+        }
+
+        elements.push(
+          <g key={`grp-${gi}`} style={{ color: groupColor }}>
+            {groupElems}
+          </g>
+        );
+        continue;
+      }
+      // Single beamable note — fall through to draw with flag
+    }
+
+    drawn.add(i);
+    const base = note.value.replace(".", "") as string;
+
+    if (base === "whole") {
       elements.push(
-        <g key={`n-${i}`} {...groupProps}>
+        <g key={`n-${gi}`} style={{ color }}>
           <ellipse cx={x} cy={staffY} rx={8} ry={5.5} stroke="currentColor" strokeWidth={2.2} fill="none" transform={`rotate(-15 ${x} ${staffY})`} />
           {isActive && <ellipse cx={x} cy={staffY} rx={10} ry={7} stroke="currentColor" strokeWidth={0.5} fill="none" opacity={0.4} />}
         </g>
       );
-    } else if (note.value === "half") {
+    } else if (base === "half") {
       elements.push(
-        <g key={`n-${i}`} {...groupProps}>
-          <ellipse cx={x} cy={staffY} rx={6} ry={4.5} stroke="currentColor" strokeWidth={1.8} fill="none" transform={`rotate(-15 ${x} ${staffY})`} />
+        <g key={`n-${gi}`} style={{ color }}>
+          {drawNoteHead(false, x, staffY, `nh-${gi}`)}
           <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
+          {isDotted(note.value) && drawDot(x, staffY, `dot-${gi}`)}
           {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
         </g>
       );
-    } else if (note.value === "quarter") {
+    } else if (base === "quarter") {
       elements.push(
-        <g key={`n-${i}`} {...groupProps}>
-          {drawNoteHead(true, x, staffY)}
+        <g key={`n-${gi}`} style={{ color }}>
+          {drawNoteHead(true, x, staffY, `nh-${gi}`)}
           <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
+          {isDotted(note.value) && drawDot(x, staffY, `dot-${gi}`)}
           {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
         </g>
       );
-    } else if (note.value === "eighth") {
-      // Check if next note is also eighth → beam them
-      const nextIsEighth = i + 1 < notes.length && notes[i + 1].value === "eighth";
-      if (nextIsEighth) {
-        const x2 = positions[i + 1];
-        elements.push(
-          <g key={`n-${i}`} {...groupProps}>
-            {drawNoteHead(true, x, staffY)}
-            {drawNoteHead(true, x2, staffY)}
-            <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
-            <line x1={x2 + 5.5} y1={staffY} x2={x2 + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
-            {/* Beam */}
-            <line x1={x + 5.5} y1={staffY - stemH} x2={x2 + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={3} />
-            {(isActive || activeIndex === i + 1) && <rect x={x - 8} y={staffY - 8} width={x2 - x + 16} height={16} rx={4} fill="currentColor" opacity={0.1} />}
-          </g>
-        );
-        i++; // skip next since we drew it
-      } else {
-        // Single eighth with flag
-        elements.push(
-          <g key={`n-${i}`} {...groupProps}>
-            {drawNoteHead(true, x, staffY)}
-            <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
-            {/* Flag */}
-            <path d={`M${x + 5.5},${staffY - stemH} q8,8 4,16`} stroke="currentColor" strokeWidth={1.8} fill="none" />
-            {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
-          </g>
-        );
-      }
-    } else if (note.value === "sixteenth") {
-      // Check for consecutive sixteenths to beam
-      let beamCount = 1;
-      while (i + beamCount < notes.length && notes[i + beamCount].value === "sixteenth" && beamCount < 4) {
-        beamCount++;
-      }
-      if (beamCount >= 2) {
-        const beamNotes = [];
-        for (let j = 0; j < beamCount; j++) {
-          beamNotes.push({ x: positions[i + j], idx: i + j });
-        }
-        const firstX = beamNotes[0].x;
-        const lastX = beamNotes[beamNotes.length - 1].x;
-        elements.push(
-          <g key={`n-${i}`} {...groupProps}>
-            {beamNotes.map((bn) => (
-              <g key={`sn-${bn.idx}`}>
-                {drawNoteHead(true, bn.x, staffY)}
-                <line x1={bn.x + 5.5} y1={staffY} x2={bn.x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
-              </g>
-            ))}
-            {/* Double beam */}
-            <line x1={firstX + 5.5} y1={staffY - stemH} x2={lastX + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={2.5} />
-            <line x1={firstX + 5.5} y1={staffY - stemH + 5} x2={lastX + 5.5} y2={staffY - stemH + 5} stroke="currentColor" strokeWidth={2.5} />
-            {beamNotes.some(bn => activeIndex === bn.idx) && <rect x={firstX - 8} y={staffY - 8} width={lastX - firstX + 16} height={16} rx={4} fill="currentColor" opacity={0.1} />}
-          </g>
-        );
-        i += beamCount - 1; // skip beamed notes
-      } else {
-        // Single sixteenth with double flag
-        elements.push(
-          <g key={`n-${i}`} {...groupProps}>
-            {drawNoteHead(true, x, staffY)}
-            <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
-            <path d={`M${x + 5.5},${staffY - stemH} q8,6 4,14`} stroke="currentColor" strokeWidth={1.8} fill="none" />
-            <path d={`M${x + 5.5},${staffY - stemH + 5} q8,6 4,14`} stroke="currentColor" strokeWidth={1.8} fill="none" />
-            {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
-          </g>
-        );
-      }
+    } else if (base === "eighth") {
+      // Single eighth with flag
+      elements.push(
+        <g key={`n-${gi}`} style={{ color }}>
+          {drawNoteHead(true, x, staffY, `nh-${gi}`)}
+          <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
+          <path d={`M${x + 5.5},${staffY - stemH} q8,8 4,16`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+          {isDotted(note.value) && drawDot(x, staffY, `dot-${gi}`)}
+          {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
+        </g>
+      );
+    } else if (base === "sixteenth") {
+      // Single sixteenth with double flag
+      elements.push(
+        <g key={`n-${gi}`} style={{ color }}>
+          {drawNoteHead(true, x, staffY, `nh-${gi}`)}
+          <line x1={x + 5.5} y1={staffY} x2={x + 5.5} y2={staffY - stemH} stroke="currentColor" strokeWidth={1.8} />
+          <path d={`M${x + 5.5},${staffY - stemH} q8,6 4,14`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+          <path d={`M${x + 5.5},${staffY - stemH + 5} q8,6 4,14`} stroke="currentColor" strokeWidth={1.8} fill="none" />
+          {isActive && <circle cx={x} cy={staffY} r={10} fill="currentColor" opacity={0.15} />}
+        </g>
+      );
     }
   }
 
   return (
-    <div className="overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${width} 65`}
-        className="w-full h-auto min-w-[400px]"
-        data-testid="rhythm-display"
-      >
-        {elements}
-      </svg>
-    </div>
+    <svg viewBox={`0 0 ${width} 65`} className="w-full h-auto" data-testid="rhythm-display">
+      {elements}
+    </svg>
   );
 }
 
+/* ── Audio ── */
 function playClick(ctx: AudioContext, freq = 800, vol = 0.4) {
   const now = ctx.currentTime;
   const osc = ctx.createOscillator();
@@ -248,11 +331,12 @@ function playClick(ctx: AudioContext, freq = 800, vol = 0.4) {
 
 const COUNT_IN_BEATS = 4;
 
+/* ── Main Component ── */
 export function RhythmTrainer() {
   const [bpm, setBpm] = useState(80);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentNote, setCurrentNote] = useState(-1);
-  const [countIn, setCountIn] = useState(-1); // -1 = not counting, 0-3 = count-in beat
+  const [countIn, setCountIn] = useState(-1);
   const [soundMode, setSoundMode] = useState<SoundMode>("rhythm");
   const [rhythmSequence, setRhythmSequence] = useState<RhythmNote[]>(() => generateRhythmSequence());
 
@@ -265,10 +349,16 @@ export function RhythmTrainer() {
   const bpmRef = useRef(bpm);
   const soundModeRef = useRef(soundMode);
 
-  // Keep refs in sync
   rhythmSequenceRef.current = rhythmSequence;
   bpmRef.current = bpm;
   soundModeRef.current = soundMode;
+
+  // Split into 2 rows of 2 bars each
+  const bars = splitIntoBars(rhythmSequence);
+  const row1Notes = [...(bars[0] || []), ...(bars[1] || [])];
+  const row2Notes = [...(bars[2] || []), ...(bars[3] || [])];
+  const row1Offset = 0;
+  const row2Offset = row1Notes.length;
 
   const getOrCreateCtx = useCallback((): AudioContext => {
     if (!audioCtxRef.current) {
@@ -281,7 +371,6 @@ export function RhythmTrainer() {
     return audioCtxRef.current;
   }, []);
 
-  // Mobile audio unlock — permanent listeners
   useEffect(() => {
     const resume = () => {
       if (audioCtxRef.current?.state === "suspended") {
@@ -307,9 +396,7 @@ export function RhythmTrainer() {
   }, []);
 
   const startPlayback = useCallback((ctx: AudioContext) => {
-    // Start metronome if in metronome mode
     if (soundModeRef.current === "metronome") {
-      // Play steady quarter-note clicks
       const tick = () => playClick(ctx, 600, 0.25);
       tick();
       metronomeRef.current = setInterval(tick, 60000 / bpmRef.current);
@@ -338,7 +425,6 @@ export function RhythmTrainer() {
     stopLoop();
     const ctx = getOrCreateCtx();
 
-    // Count-in: 4 quarter-note beats
     countInRef.current = 0;
     setCountIn(0);
     setCurrentNote(-1);
@@ -349,14 +435,12 @@ export function RhythmTrainer() {
     const countInTick = () => {
       const beat = countInRef.current;
       setCountIn(beat);
-      // High-pitched count-in click
       playClick(ctx, 1200, 0.5);
 
       if (beat < COUNT_IN_BEATS - 1) {
         countInRef.current = beat + 1;
         timeoutRef.current = setTimeout(countInTick, beatMs);
       } else {
-        // Count-in done, start rhythm
         setCountIn(-1);
         timeoutRef.current = setTimeout(() => startPlayback(ctx), beatMs);
       }
@@ -365,7 +449,6 @@ export function RhythmTrainer() {
     countInTick();
   }, [getOrCreateCtx, stopLoop, startPlayback]);
 
-  // Restart when BPM changes during playback (only if already past count-in)
   useEffect(() => {
     if (isPlaying && currentNote >= 0) {
       stopLoop();
@@ -375,7 +458,6 @@ export function RhythmTrainer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bpm]);
 
-  // Cleanup
   useEffect(() => {
     return () => {
       stopLoop();
@@ -400,7 +482,6 @@ export function RhythmTrainer() {
     noteRef.current = 0;
     setCurrentNote(-1);
     setRhythmSequence(generateRhythmSequence());
-    
     if (isPlaying) {
       startLoop();
     }
@@ -479,17 +560,31 @@ export function RhythmTrainer() {
         </div>
       )}
 
-      {/* Rhythm Staff Display */}
-      <div className="mb-6 p-4 bg-background border rounded-lg">
-        <RhythmStaff notes={rhythmSequence} activeIndex={currentNote} />
+      {/* Rhythm Staff Display — 2 rows */}
+      <div className="mb-6 p-4 bg-background border rounded-lg space-y-2">
+        {row1Notes.length > 0 && (
+          <RhythmRow notes={row1Notes} globalIndexOffset={row1Offset} activeIndex={currentNote} barLineAfterFirst={true} />
+        )}
+        {row2Notes.length > 0 && (
+          <RhythmRow notes={row2Notes} globalIndexOffset={row2Offset} activeIndex={currentNote} barLineAfterFirst={true} />
+        )}
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-4 sm:gap-6 text-xs text-muted-foreground mb-8">
-        {(["whole", "half", "quarter", "eighth", "sixteenth"] as NoteValue[]).map((v) => (
-          <div key={v} className="flex items-center gap-1">
-            <span className="font-medium">{NOTE_LABELS[v]}</span>
-            <span>({NOTE_BEATS[v]})</span>
+      <div className="flex flex-wrap justify-center gap-3 sm:gap-5 text-xs text-muted-foreground mb-8">
+        {([
+          ["Whole", 4],
+          ["Half", 2],
+          ["Half·", 3],
+          ["Quarter", 1],
+          ["Quarter·", 1.5],
+          ["Eighth", 0.5],
+          ["Eighth·", 0.75],
+          ["16th", 0.25],
+        ] as [string, number][]).map(([label, beats]) => (
+          <div key={label} className="flex items-center gap-1">
+            <span className="font-medium">{label}</span>
+            <span>({beats})</span>
           </div>
         ))}
       </div>
