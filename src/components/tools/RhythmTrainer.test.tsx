@@ -59,6 +59,24 @@ describe("RhythmTrainer", () => {
     expect(screen.getByTestId("next-btn")).toBeInTheDocument();
   });
 
+  it("renders difficulty toggle with easy/medium/hard", () => {
+    render(<RhythmTrainer />);
+
+    expect(screen.getByTestId("difficulty-easy")).toBeInTheDocument();
+    expect(screen.getByTestId("difficulty-medium")).toBeInTheDocument();
+    expect(screen.getByTestId("difficulty-hard")).toBeInTheDocument();
+  });
+
+  it("changes difficulty and regenerates pattern", () => {
+    render(<RhythmTrainer />);
+
+    fireEvent.click(screen.getByTestId("difficulty-easy"));
+    expect(screen.getAllByTestId("rhythm-display").length).toBe(2);
+
+    fireEvent.click(screen.getByTestId("difficulty-hard"));
+    expect(screen.getAllByTestId("rhythm-display").length).toBe(2);
+  });
+
   it("renders sound mode toggle", () => {
     render(<RhythmTrainer />);
 

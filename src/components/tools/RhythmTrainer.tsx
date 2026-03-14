@@ -59,20 +59,26 @@ function beamCount(v: NoteValue): number {
   return 1; // eighth, eighth.
 }
 
-function generateRhythmBar(): RhythmNote[] {
+type Difficulty = "easy" | "medium" | "hard";
+
+// Note pools by difficulty
+const DIFFICULTY_NOTES: Record<Difficulty, NoteValue[]> = {
+  easy: ["whole", "half", "quarter", "rest-whole", "rest-half", "rest-quarter"],
+  medium: ["whole", "half", "half.", "quarter", "quarter.", "eighth", "rest-half", "rest-quarter", "rest-eighth"],
+  hard: [
+    "whole", "half", "half.", "quarter", "quarter.",
+    "eighth", "eighth.", "sixteenth",
+    "rest-whole", "rest-half", "rest-quarter", "rest-eighth", "rest-sixteenth",
+  ],
+};
+
+function generateRhythmBar(difficulty: Difficulty): RhythmNote[] {
+  const pool = DIFFICULTY_NOTES[difficulty];
   const notes: RhythmNote[] = [];
   let remaining = 4;
 
   while (remaining > 0) {
-    const possible: NoteValue[] = [];
-    if (remaining >= 4) { possible.push("whole"); possible.push("rest-whole"); }
-    if (remaining >= 3) possible.push("half.");
-    if (remaining >= 2) { possible.push("half"); possible.push("rest-half"); }
-    if (remaining >= 1.5) possible.push("quarter.");
-    if (remaining >= 1) { possible.push("quarter"); possible.push("rest-quarter"); }
-    if (remaining >= 0.75) possible.push("eighth.");
-    if (remaining >= 0.5) { possible.push("eighth"); possible.push("rest-eighth"); }
-    if (remaining >= 0.25) { possible.push("sixteenth"); possible.push("rest-sixteenth"); }
+    const possible = pool.filter((v) => NOTE_BEATS[v] <= remaining + 0.001);
 
     const chosen = possible[Math.floor(Math.random() * possible.length)];
     const beats = NOTE_BEATS[chosen];
@@ -83,12 +89,12 @@ function generateRhythmBar(): RhythmNote[] {
   return notes;
 }
 
-function generateRhythmSequence(): RhythmNote[] {
+function generateRhythmSequence(difficulty: Difficulty): RhythmNote[] {
   return [
-    ...generateRhythmBar(),
-    ...generateRhythmBar(),
-    ...generateRhythmBar(),
-    ...generateRhythmBar(),
+    ...generateRhythmBar(difficulty),
+    ...generateRhythmBar(difficulty),
+    ...generateRhythmBar(difficulty),
+    ...generateRhythmBar(difficulty),
   ];
 }
 
@@ -542,7 +548,8 @@ export function RhythmTrainer() {
   const [currentNote, setCurrentNote] = useState(-1);
   const [countIn, setCountIn] = useState(-1);
   const [soundMode, setSoundMode] = useState<SoundMode>("rhythm");
-  const [rhythmSequence, setRhythmSequence] = useState<RhythmNote[]>(() => generateRhythmSequence());
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [rhythmSequence, setRhythmSequence] = useState<RhythmNote[]>(() => generateRhythmSequence("medium"));
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -685,9 +692,21 @@ export function RhythmTrainer() {
   const handleNext = () => {
     noteRef.current = 0;
     setCurrentNote(-1);
-    setRhythmSequence(generateRhythmSequence());
+    setRhythmSequence(generateRhythmSequence(difficulty));
     if (isPlaying) {
       startLoop();
+    }
+  };
+
+  const handleDifficulty = (d: Difficulty) => {
+    setDifficulty(d);
+    noteRef.current = 0;
+    setCurrentNote(-1);
+    setRhythmSequence(generateRhythmSequence(d));
+    if (isPlaying) {
+      stopLoop();
+      setIsPlaying(false);
+      setCountIn(-1);
     }
   };
 
@@ -707,8 +726,26 @@ export function RhythmTrainer() {
         </p>
       </div>
 
-      {/* Sound Mode Toggle */}
-      <div className="flex justify-center mb-6">
+      {/* Difficulty & Sound Mode */}
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+        {/* Difficulty */}
+        <div className="flex gap-2" data-testid="difficulty-toggle">
+          {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
+            <Button
+              key={d}
+              variant={difficulty === d ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleDifficulty(d)}
+              data-testid={`difficulty-${d}`}
+            >
+              {d.charAt(0).toUpperCase() + d.slice(1)}
+            </Button>
+          ))}
+        </div>
+
+        <div className="hidden sm:block w-px h-6 bg-border" />
+
+        {/* Sound Mode */}
         <div className="flex gap-2">
           <Button
             variant={soundMode === "metronome" ? "default" : "outline"}
