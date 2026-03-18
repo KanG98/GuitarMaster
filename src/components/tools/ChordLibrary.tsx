@@ -231,10 +231,7 @@ export function ChordLibrary() {
       setBuildFeedback({ type: "wrong", score: `${result.correct}/${result.total}` });
     }
     setBuildState("feedback");
-    buildTimerRef.current = setTimeout(() => {
-      nextBuildRound();
-    }, 2500);
-  }, [buildState, buildChord, buildPlacement, nextBuildRound]);
+  }, [buildState, buildChord, buildPlacement]);
 
   const switchMode = (newMode: Mode) => {
     setMode(newMode);
@@ -564,6 +561,15 @@ export function ChordLibrary() {
                   data-testid="build-submit-btn"
                 >
                   Check
+                </Button>
+              )}
+              {buildState === "feedback" && (
+                <Button
+                  size="sm"
+                  onClick={nextBuildRound}
+                  data-testid="build-next-btn"
+                >
+                  Next →
                 </Button>
               )}
             </div>
