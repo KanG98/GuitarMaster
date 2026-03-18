@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef } from "react";
-import { Search, X, Play, RotateCcw } from "lucide-react";
+import { Search, X, Play, RotateCcw, Guitar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChordDiagram } from "./ChordDiagram";
 import {
@@ -14,8 +14,9 @@ import {
   ChordQuality,
   getPrimaryChords,
 } from "@/lib/chordData";
+import { InteractiveFretboard, comparePlacement } from "./InteractiveFretboard";
 
-type Mode = "browse" | "quiz";
+type Mode = "browse" | "quiz" | "build";
 type QuizState = "idle" | "waiting" | "feedback";
 type QuizDirection = "nameToDiagram" | "diagramToName";
 
@@ -54,6 +55,20 @@ export function ChordLibrary() {
   const [bestStreak, setBestStreak] = useState(0);
   const [feedback, setFeedback] = useState<{ type: "correct" | "wrong"; answer: string } | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Build quiz state
+  const [buildChord, setBuildChord] = useState<ChordDefinition | null>(null);
+  const [buildState, setBuildState] = useState<"idle" | "placing" | "feedback">("idle");
+  const [buildAnswer, setBuildAnswer] = useState<ChordDefinition | null>(null); // set on submit to show overlay
+  const [buildCorrect, setBuildCorrect] = useState(0);
+  const [buildTotal, setBuildTotal] = useState(0);
+  const [buildStreak, setBuildStreak] = useState(0);
+  const [buildBestStreak, setBuildBestStreak] = useState(0);
+  const [buildFeedback, setBuildFeedback] = useState<{ type: "correct" | "wrong"; score: string } | null>(null);
+  const buildFretboardRef = useRef<{ getPlacement: () => (number | null)[], reset: () => void } | null>(null);
+  const buildTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Key to force remount InteractiveFretboard on new round
+  const [buildKey, setBuildKey] = useState(0);
 
   // Filter and group chords for browse
   const filteredGroups = useMemo(() => {
@@ -153,9 +168,78 @@ export function ChordLibrary() {
     [quizState, selectedIndex, quizChord, quizOptions, nextRound]
   );
 
+  // Build quiz: only use open-position chords (baseFret === 1, no frets > 5)
+  const buildableChords = useMemo(() => {
+    return getPrimaryChords().filter(
+      (c) => c.baseFret === 1 && c.strings.every((f) => f === null || f <= 5)
+    );
+  }, []);
+
+  const nextBuildRound = useCallback(() => {
+    const shuffled = shuffleArray(buildableChords);
+    setBuildChord(shuffled[0]);
+    setBuildAnswer(null);
+    setBuildFeedback(null);
+    setBuildState("placing");
+    setBuildKey((k) => k + 1);
+  }, [buildableChords]);
+
+  const startBuild = useCallback(() => {
+    setBuildCorrect(0);
+    setBuildTotal(0);
+    setBuildStreak(0);
+    setBuildBestStreak(0);
+    nextBuildRound();
+  }, [nextBuildRound]);
+
+  const resetBuild = useCallback(() => {
+    if (buildTimerRef.current) {
+      clearTimeout(buildTimerRef.current);
+      buildTimerRef.current = null;
+    }
+    setBuildState("idle");
+    setBuildChord(null);
+    setBuildAnswer(null);
+    setBuildFeedback(null);
+    setBuildCorrect(0);
+    setBuildTotal(0);
+    setBuildStreak(0);
+    setBuildBestStreak(0);
+    setBuildKey((k) => k + 1);
+  }, []);
+
+  // Called from a separate Submit button — reads placement from InteractiveFretboard via ref-like pattern
+  // We'll use a state-based approach instead of ref
+  const [buildPlacement, setBuildPlacement] = useState<(number | null)[]>([null, null, null, null, null, null]);
+
+  const handleBuildSubmit = useCallback(() => {
+    if (buildState !== "placing" || !buildChord) return;
+    const result = comparePlacement(buildPlacement, buildChord);
+    setBuildTotal((p) => p + 1);
+    setBuildAnswer(buildChord); // triggers answer overlay in fretboard
+
+    if (result.perfect) {
+      setBuildCorrect((p) => p + 1);
+      setBuildStreak((p) => {
+        const n = p + 1;
+        setBuildBestStreak((b) => Math.max(b, n));
+        return n;
+      });
+      setBuildFeedback({ type: "correct", score: `${result.correct}/${result.total}` });
+    } else {
+      setBuildStreak(0);
+      setBuildFeedback({ type: "wrong", score: `${result.correct}/${result.total}` });
+    }
+    setBuildState("feedback");
+    buildTimerRef.current = setTimeout(() => {
+      nextBuildRound();
+    }, 2500);
+  }, [buildState, buildChord, buildPlacement, nextBuildRound]);
+
   const switchMode = (newMode: Mode) => {
     setMode(newMode);
     if (newMode === "quiz") resetQuiz();
+    if (newMode === "build") resetBuild();
   };
 
   const hasActiveFilters = filterRoot !== "all" || filterQuality !== "all" || searchQuery !== "";
@@ -179,6 +263,15 @@ export function ChordLibrary() {
           data-testid="mode-quiz"
         >
           Quiz
+        </Button>
+        <Button
+          variant={mode === "build" ? "default" : "outline"}
+          size="sm"
+          onClick={() => switchMode("build")}
+          data-testid="mode-build"
+        >
+          <Guitar className="h-3 w-3 mr-1" />
+          Build It
         </Button>
       </div>
 
@@ -427,6 +520,114 @@ export function ChordLibrary() {
               data-testid="feedback-overlay"
             >
               {feedback.type === "correct" ? "Correct!" : `It was ${feedback.answer}!`}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Build It mode */}
+      {mode === "build" && (
+        <div className="space-y-6 max-w-2xl mx-auto">
+          {/* Stats panel */}
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3" data-testid="build-panel">
+            <p className="text-center font-medium text-lg" data-testid="build-prompt">
+              {buildState === "idle"
+                ? "Place fingers on the fretboard to build the chord!"
+                : `Build: ${buildChord?.name}`}
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Tap fret positions to place fingers. Tap above the nut to toggle open/muted.
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button
+                size="sm"
+                onClick={buildState === "idle" ? startBuild : resetBuild}
+                data-testid="build-start-btn"
+              >
+                {buildState === "idle" ? (
+                  <>
+                    <Play className="h-3 w-3 mr-1" />
+                    Start
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset
+                  </>
+                )}
+              </Button>
+              {buildState === "placing" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBuildSubmit}
+                  data-testid="build-submit-btn"
+                >
+                  Check
+                </Button>
+              )}
+            </div>
+            <div className="flex justify-center gap-6 text-sm">
+              <div className="text-center">
+                <span className="text-muted-foreground">Score</span>
+                <p className="font-semibold" data-testid="build-score">
+                  {buildCorrect} / {buildTotal}
+                </p>
+              </div>
+              <div className="text-center">
+                <span className="text-muted-foreground">Streak</span>
+                <p className="font-semibold" data-testid="build-streak">
+                  {buildStreak}
+                </p>
+              </div>
+              <div className="text-center">
+                <span className="text-muted-foreground">Best</span>
+                <p className="font-semibold" data-testid="build-best">
+                  {buildBestStreak}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive fretboard */}
+          {buildState !== "idle" && (
+            <div className="flex justify-center">
+              <InteractiveFretboard
+                key={buildKey}
+                size={250}
+                disabled={buildState === "feedback"}
+                answer={buildAnswer}
+                onChange={setBuildPlacement}
+                data-testid="build-fretboard"
+              />
+            </div>
+          )}
+
+          {/* Correct answer diagram shown during feedback */}
+          {buildState === "feedback" && buildChord && (
+            <div className="flex justify-center gap-8 items-start">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Correct answer</p>
+                <div className="p-3 rounded-xl border bg-card">
+                  <ChordDiagram chord={buildChord} size={130} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback banner */}
+          {buildFeedback && (
+            <div
+              className={`text-center py-3 px-4 rounded-lg font-semibold text-lg ${
+                buildFeedback.type === "correct"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                  : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+              }`}
+              data-testid="build-feedback"
+            >
+              {buildFeedback.type === "correct"
+                ? "Perfect! 🎸"
+                : `${buildFeedback.score} strings correct`}
             </div>
           )}
         </div>
