@@ -19,6 +19,7 @@ interface SongDocument {
   artist: string;
   totalPracticeSeconds: number;
   youtubeVideoId: string | null;
+  youtubeBackingTrackId: string | null;
   createdAt: Timestamp;
 }
 
@@ -40,6 +41,7 @@ export interface SongRecord {
   artist: string;
   totalPracticeSeconds: number;
   youtubeVideoId: string | null;
+  youtubeBackingTrackId: string | null;
   createdAt: Date;
 }
 
@@ -71,6 +73,7 @@ export async function createSong(name: string, artist: string): Promise<SongReco
     artist,
     totalPracticeSeconds: 0,
     youtubeVideoId: null,
+    youtubeBackingTrackId: null,
     createdAt: new Date(),
   };
 }
@@ -86,6 +89,7 @@ export async function getSongs(): Promise<SongRecord[]> {
       artist: data.artist ?? "",
       totalPracticeSeconds: data.totalPracticeSeconds ?? 0,
       youtubeVideoId: data.youtubeVideoId ?? null,
+      youtubeBackingTrackId: data.youtubeBackingTrackId ?? null,
       createdAt: data.createdAt?.toDate() ?? new Date(),
     };
   });
@@ -115,6 +119,12 @@ export async function updatePracticeTime(songId: string, additionalSeconds: numb
 export async function updateSongVideo(songId: string, videoId: string | null): Promise<void> {
   await updateDoc(doc(db, SONGS_COLLECTION, songId), {
     youtubeVideoId: videoId,
+  });
+}
+
+export async function updateSongBackingTrack(songId: string, videoId: string | null): Promise<void> {
+  await updateDoc(doc(db, SONGS_COLLECTION, songId), {
+    youtubeBackingTrackId: videoId,
   });
 }
 

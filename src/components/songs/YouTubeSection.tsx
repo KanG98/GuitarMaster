@@ -17,6 +17,7 @@ interface YouTubeSectionProps {
   onSelectVideo: (videoId: string) => void;
   onRemoveVideo: () => void;
   onPlayingChange?: (playing: boolean) => void;
+  defaultSearchQuery?: string;
 }
 
 export function YouTubeSection({
@@ -30,6 +31,7 @@ export function YouTubeSection({
   onSelectVideo,
   onRemoveVideo,
   onPlayingChange,
+  defaultSearchQuery,
 }: YouTubeSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [urlInput, setUrlInput] = useState("");
@@ -48,7 +50,7 @@ export function YouTubeSection({
   };
 
   const handleSearchDefault = () => {
-    onSearch(buildGuitarTabQuery(songName, artist));
+    onSearch(defaultSearchQuery ?? buildGuitarTabQuery(songName, artist));
   };
 
   const handleSelectResult = (result: YouTubeSearchResult) => {

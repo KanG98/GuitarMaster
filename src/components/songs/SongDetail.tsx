@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowLeft, Trash2, User } from "lucide-react";
+import { ArrowLeft, Trash2, User, Music, Mic2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { FileGallery } from "@/components/viewer/FileGallery";
@@ -9,8 +9,10 @@ import { FileViewer } from "@/components/viewer/FileViewer";
 import { PracticeTimer } from "./PracticeTimer";
 import { YouTubeSection } from "./YouTubeSection";
 import { SongRecord, updatePracticeTime } from "@/lib/fileService";
+import { buildBackingTrackQuery } from "@/lib/youtubeService";
 import { useSongFiles } from "@/hooks/useSongFiles";
 import { useYouTubeSearch } from "@/hooks/useYouTubeSearch";
+import { useBackingTrackSearch } from "@/hooks/useBackingTrackSearch";
 
 interface SongDetailProps {
   song: SongRecord;
@@ -22,6 +24,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoMode, setVideoMode] = useState<"original" | "backing">("original");
 
   // Use extracted hooks
   const {
@@ -44,6 +47,18 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
     handleSelectVideo,
     handleRemoveVideo,
   } = useYouTubeSearch(song.id, song.name, song.artist, song.youtubeVideoId);
+
+  const {
+    videoId: backingTrackId,
+    isSearching: isSearchingBacking,
+    results: backingResults,
+    error: backingError,
+    handleSearch: handleBackingSearch,
+    handleSelectVideo: handleSelectBacking,
+    handleRemoveVideo: handleRemoveBacking,
+  } = useBackingTrackSearch(song.id, song.name, song.artist, song.youtubeBackingTrackId);
+
+  const activeVideoId = videoMode === "original" ? videoId : backingTrackId;
 
   const handleBack = async () => {
     const delta = practiceSecondsRef.current - song.totalPracticeSeconds;
@@ -80,7 +95,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <PracticeTimer songId={song.id} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} isPlaying={videoId ? isVideoPlaying : undefined} />
+          <PracticeTimer songId={song.id} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} isPlaying={activeVideoId ? isVideoPlaying : undefined} />
           <Button
             variant="outline"
             size="sm"
@@ -93,21 +108,63 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
         </div>
       </div>
 
-      {videoId ? (
+      {/* Video mode toggle */}
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit">
+        <button
+          onClick={() => setVideoMode("original")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            videoMode === "original"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Mic2 className="h-3.5 w-3.5" />
+          Original
+        </button>
+        <button
+          onClick={() => setVideoMode("backing")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            videoMode === "backing"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Music className="h-3.5 w-3.5" />
+          Backing Track
+        </button>
+      </div>
+
+      {activeVideoId ? (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3">
-            <YouTubeSection
-              videoId={videoId}
-              songName={song.name}
-              artist={song.artist}
-              isSearching={isSearchingYouTube}
-              searchResults={youtubeResults}
-              searchError={youtubeError}
-              onSearch={handleYouTubeSearch}
-              onSelectVideo={handleSelectVideo}
-              onRemoveVideo={handleRemoveVideo}
-              onPlayingChange={setIsVideoPlaying}
-            />
+            {videoMode === "original" ? (
+              <YouTubeSection
+                videoId={videoId}
+                songName={song.name}
+                artist={song.artist}
+                isSearching={isSearchingYouTube}
+                searchResults={youtubeResults}
+                searchError={youtubeError}
+                onSearch={handleYouTubeSearch}
+                onSelectVideo={handleSelectVideo}
+                onRemoveVideo={handleRemoveVideo}
+                onPlayingChange={setIsVideoPlaying}
+              />
+            ) : (
+              <YouTubeSection
+                videoId={backingTrackId}
+                songName={song.name}
+                artist={song.artist}
+                isSearching={isSearchingBacking}
+                searchResults={backingResults}
+                searchError={backingError}
+                onSearch={handleBackingSearch}
+                onSelectVideo={handleSelectBacking}
+                onRemoveVideo={handleRemoveBacking}
+                onPlayingChange={setIsVideoPlaying}
+                defaultSearchQuery={buildBackingTrackQuery(song.name, song.artist)}
+              />
+            )}
           </div>
           <div className="lg:col-span-2">
             {files.length === 0 && (
@@ -139,18 +196,34 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
         </div>
       ) : (
         <>
-          <YouTubeSection
-            videoId={videoId}
-            songName={song.name}
-            artist={song.artist}
-            isSearching={isSearchingYouTube}
-            searchResults={youtubeResults}
-            searchError={youtubeError}
-            onSearch={handleYouTubeSearch}
-            onSelectVideo={handleSelectVideo}
-            onRemoveVideo={handleRemoveVideo}
-            onPlayingChange={setIsVideoPlaying}
-          />
+          {videoMode === "original" ? (
+            <YouTubeSection
+              videoId={videoId}
+              songName={song.name}
+              artist={song.artist}
+              isSearching={isSearchingYouTube}
+              searchResults={youtubeResults}
+              searchError={youtubeError}
+              onSearch={handleYouTubeSearch}
+              onSelectVideo={handleSelectVideo}
+              onRemoveVideo={handleRemoveVideo}
+              onPlayingChange={setIsVideoPlaying}
+            />
+          ) : (
+            <YouTubeSection
+              videoId={backingTrackId}
+              songName={song.name}
+              artist={song.artist}
+              isSearching={isSearchingBacking}
+              searchResults={backingResults}
+              searchError={backingError}
+              onSearch={handleBackingSearch}
+              onSelectVideo={handleSelectBacking}
+              onRemoveVideo={handleRemoveBacking}
+              onPlayingChange={setIsVideoPlaying}
+              defaultSearchQuery={buildBackingTrackQuery(song.name, song.artist)}
+            />
+          )}
           {files.length === 0 && (
             <UploadZone
               onFilesSelected={handleUpload}

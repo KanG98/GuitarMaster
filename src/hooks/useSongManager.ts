@@ -7,8 +7,9 @@ import {
   getSongs,
   deleteSong,
   updateSongVideo,
+  updateSongBackingTrack,
 } from "@/lib/fileService";
-import { searchYouTube, buildGuitarTabQuery } from "@/lib/youtubeService";
+import { searchYouTube, buildGuitarTabQuery, buildBackingTrackQuery } from "@/lib/youtubeService";
 
 interface UseSongManagerReturn {
   songs: SongRecord[];
@@ -45,16 +46,25 @@ export function useSongManager(): UseSongManagerReturn {
       const record = await createSong(name, artist);
       setSongs((prev) => [record, ...prev]);
 
-      // Auto-search YouTube in background
+      // Auto-search YouTube in background (original + backing track)
       try {
-        const query = buildGuitarTabQuery(name, artist);
-        const results = await searchYouTube(query);
-        if (results.length > 0) {
-          const bestMatch = results[0];
-          await updateSongVideo(record.id, bestMatch.videoId);
+        const [originalResults, backingResults] = await Promise.all([
+          searchYouTube(buildGuitarTabQuery(name, artist)),
+          searchYouTube(buildBackingTrackQuery(name, artist)),
+        ]);
+        const updates: Partial<SongRecord> = {};
+        if (originalResults.length > 0) {
+          await updateSongVideo(record.id, originalResults[0].videoId);
+          updates.youtubeVideoId = originalResults[0].videoId;
+        }
+        if (backingResults.length > 0) {
+          await updateSongBackingTrack(record.id, backingResults[0].videoId);
+          updates.youtubeBackingTrackId = backingResults[0].videoId;
+        }
+        if (Object.keys(updates).length > 0) {
           setSongs((prev) =>
             prev.map((s) =>
-              s.id === record.id ? { ...s, youtubeVideoId: bestMatch.videoId } : s
+              s.id === record.id ? { ...s, ...updates } : s
             )
           );
         }

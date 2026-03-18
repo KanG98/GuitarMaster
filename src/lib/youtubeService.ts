@@ -40,3 +40,7 @@ export function extractVideoId(input: string): string | null {
 export function buildGuitarTabQuery(songName: string, artist: string): string {
   return [songName, artist, "official video"].filter(Boolean).join(" ");
 }
+
+export function buildBackingTrackQuery(songName: string, artist: string): string {
+  return [songName, artist, "伴奏"].filter(Boolean).join(" ");
+}
