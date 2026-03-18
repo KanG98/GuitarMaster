@@ -2,7 +2,8 @@ export type NoteRoot = "C" | "C#" | "D" | "D#" | "E" | "F" | "F#" | "G" | "G#" |
 
 export type ChordQuality =
   | "major" | "minor" | "7" | "m7" | "maj7"
-  | "sus2" | "sus4" | "dim" | "aug" | "add9";
+  | "sus2" | "sus4" | "dim" | "aug" | "add9"
+  | "m7b5" | "slash";
 
 export interface Barre {
   fret: number;
@@ -338,6 +339,39 @@ export const CHORDS: ChordDefinition[] = [
     strings: [3, 2, 0, 2, 0, 3], fingers: [3, 2, null, 1, null, 4], baseFret: 1 },
   { id: "Aadd9", name: "Aadd9", root: "A", quality: "add9", position: "Open",
     strings: [null, 0, 2, 2, 2, 0], fingers: [null, null, 1, 2, 3, null], baseFret: 1 },
+
+  // ══════════════════════════════════════════════════════════
+  // MINOR 7 FLAT 5 (HALF-DIMINISHED)
+  // ══════════════════════════════════════════════════════════
+
+  // F#m7♭5 — common voicing (2nd position)
+  { id: "Fsm7b5", name: "F#m7♭5", root: "F#", quality: "m7b5", position: "2fr",
+    strings: [2, 0, 2, 2, 1, 0], fingers: [2, null, 3, 4, 1, null], baseFret: 1 },
+  // F#m7♭5 — barre voicing (9th position, Am7b5 shape)
+  { id: "Fsm7b5_v2", name: "F#m7♭5", root: "F#", quality: "m7b5", position: "9fr",
+    strings: [null, 9, 10, 9, 10, null], fingers: [null, 1, 2, 1, 3, null], baseFret: 9,
+    barres: [{ fret: 9, fromString: 1, toString: 3 }] },
+
+  // Bm7♭5
+  { id: "Bm7b5", name: "Bm7♭5", root: "B", quality: "m7b5", position: "Open",
+    strings: [null, 2, 3, 2, 3, null], fingers: [null, 1, 2, 1, 3, null], baseFret: 1,
+    barres: [{ fret: 2, fromString: 1, toString: 3 }] },
+
+  // ══════════════════════════════════════════════════════════
+  // SLASH CHORDS
+  // ══════════════════════════════════════════════════════════
+
+  // F/G — F major with G in bass
+  { id: "F_over_G", name: "F/G", root: "F", quality: "slash", position: "Open",
+    strings: [3, null, 3, 2, 1, 1], fingers: [3, null, 4, 2, 1, 1], baseFret: 1 },
+
+  // Am7/G — Am7 with G in bass
+  { id: "Am7_over_G", name: "Am7/G", root: "A", quality: "slash", position: "Open",
+    strings: [3, 0, 2, 0, 1, 0], fingers: [4, null, 2, null, 1, null], baseFret: 1 },
+
+  // G/B — G major with B in bass
+  { id: "G_over_B", name: "G/B", root: "G", quality: "slash", position: "Open",
+    strings: [null, 2, 0, 0, 0, 3], fingers: [null, 1, null, null, null, 3], baseFret: 1 },
 ];
 
 export const QUALITY_LABELS: Record<ChordQuality, string> = {
@@ -351,10 +385,12 @@ export const QUALITY_LABELS: Record<ChordQuality, string> = {
   dim: "Diminished",
   aug: "Augmented",
   add9: "Add9",
+  m7b5: "Minor 7♭5",
+  slash: "Slash Chords",
 };
 
 export const ALL_ROOTS: NoteRoot[] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-export const ALL_QUALITIES: ChordQuality[] = ["major", "minor", "7", "m7", "maj7", "sus2", "sus4", "dim", "aug", "add9"];
+export const ALL_QUALITIES: ChordQuality[] = ["major", "minor", "7", "m7", "maj7", "sus2", "sus4", "dim", "aug", "add9", "m7b5", "slash"];
 
 // Get only the first/primary voicing for each chord name (used for quiz)
 export function getPrimaryChords(): ChordDefinition[] {

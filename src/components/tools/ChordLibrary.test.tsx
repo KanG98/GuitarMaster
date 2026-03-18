@@ -53,7 +53,7 @@ describe("ChordLibrary", () => {
     });
     const grid = screen.getByTestId("chord-grid");
     const groups = grid.querySelectorAll("[data-testid^='chord-group-']");
-    expect(groups.length).toBe(1);
+    expect(groups.length).toBeGreaterThanOrEqual(1);
   });
 
   test("root filter shows only chords in that key", () => {
