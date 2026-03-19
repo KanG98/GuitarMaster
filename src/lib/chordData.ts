@@ -95,7 +95,7 @@ export const CHORDS: ChordDefinition[] = [
 
   // F Major
   { id: "F_major", name: "F", root: "F", quality: "major", position: "1fr",
-    strings: [1, 1, 2, 3, 3, 1], fingers: [1, 1, 2, 3, 4, 1], baseFret: 1,
+    strings: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], baseFret: 1,
     barres: [{ fret: 1, fromString: 0, toString: 5 }] },
   aShapeMajor("F_major_v2", "F", "F", 8),
 
@@ -110,9 +110,10 @@ export const CHORDS: ChordDefinition[] = [
   aShapeMajor("G_major_v3", "G", "G", 10),
 
   // Ab Major
-  { id: "Ab_major", name: "Ab", root: "G#", quality: "major", position: "4fr",
-    strings: [4, 6, 6, 5, 4, 4], fingers: [1, 3, 4, 2, 1, 1], baseFret: 4,
-    barres: [{ fret: 4, fromString: 0, toString: 5 }] },
+  { id: "Ab_major", name: "Ab", root: "G#", quality: "major", position: "1fr",
+    strings: [null, null, 1, 1, 1, 4], fingers: [null, null, 1, 1, 1, 4], baseFret: 1,
+    barres: [{ fret: 1, fromString: 2, toString: 4 }] },
+  eShapeMajor("Ab_major_v2", "Ab", "G#", 4),
 
   // A Major
   { id: "A_major", name: "A", root: "A", quality: "major", position: "Open",
@@ -132,9 +133,8 @@ export const CHORDS: ChordDefinition[] = [
   eShapeMajor("B_major_v2", "B", "B", 7),
 
   // Eb Major
-  { id: "Eb_major", name: "Eb", root: "D#", quality: "major", position: "3fr",
-    strings: [null, null, 5, 3, 4, 3], fingers: [null, null, 3, 1, 2, 1], baseFret: 3,
-    barres: [{ fret: 3, fromString: 3, toString: 5 }] },
+  { id: "Eb_major", name: "Eb", root: "D#", quality: "major", position: "1fr",
+    strings: [null, null, 1, 3, 4, 3], fingers: [null, null, 1, 2, 4, 3], baseFret: 1 },
   eShapeMajor("Eb_major_v2", "Eb", "D#", 6),
 
   // ══════════════════════════════════════════════════════════
@@ -153,10 +153,10 @@ export const CHORDS: ChordDefinition[] = [
   eShapeMinor("Bm_minor_v2", "Bm", "B", 7),
 
   // Cm
-  { id: "Cm_minor", name: "Cm", root: "C", quality: "minor", position: "3fr",
-    strings: [null, 3, 5, 5, 4, 3], fingers: [null, 1, 3, 4, 2, 1], baseFret: 3,
-    barres: [{ fret: 3, fromString: 1, toString: 5 }] },
-  eShapeMinor("Cm_minor_v2", "Cm", "C", 8),
+  { id: "Cm_minor", name: "Cm", root: "C", quality: "minor", position: "Open",
+    strings: [null, 3, 1, 0, 1, 3], fingers: [null, 3, 1, null, 2, 4], baseFret: 1 },
+  aShapeMinor("Cm_minor_v2", "Cm", "C", 3),
+  eShapeMinor("Cm_minor_v3", "Cm", "C", 8),
 
   // C#m
   aShapeMinor("Csm_minor", "C#m", "C#", 4),
@@ -235,32 +235,35 @@ export const CHORDS: ChordDefinition[] = [
   aShapeM7("Am7_v2", "Am7", "A", 5),
 
   { id: "Em7", name: "Em7", root: "E", quality: "m7", position: "Open",
-    strings: [0, 2, 0, 0, 0, 0], fingers: [null, 2, null, null, null, null], baseFret: 1 },
+    strings: [0, 2, 0, 0, 0, 0], fingers: [null, 1, null, null, null, null], baseFret: 1 },
 
   { id: "Dm7", name: "Dm7", root: "D", quality: "m7", position: "Open",
-    strings: [null, null, 0, 2, 1, 1], fingers: [null, null, null, 2, 1, 1], baseFret: 1 },
+    strings: [null, null, 0, 2, 1, 1], fingers: [null, null, null, 3, 1, 2], baseFret: 1 },
   aShapeM7("Dm7_v2", "Dm7", "D", 5),
 
   { id: "Bm7", name: "Bm7", root: "B", quality: "m7", position: "Open",
-    strings: [null, 2, 0, 2, 0, 2], fingers: [null, 2, null, 3, null, 4], baseFret: 1 },
+    strings: [null, 0, 0, 2, 0, 2], fingers: [null, null, null, 1, null, 2], baseFret: 1 },
   aShapeM7("Bm7_v2", "Bm7", "B", 7),
 
   { id: "Gm7", name: "Gm7", root: "G", quality: "m7", position: "3fr",
     strings: [3, 5, 3, 3, 3, 3], fingers: [1, 3, 1, 1, 1, 1], baseFret: 3,
     barres: [{ fret: 3, fromString: 0, toString: 5 }] },
 
-  { id: "Cm7", name: "Cm7", root: "C", quality: "m7", position: "3fr",
-    strings: [null, 3, 5, 3, 4, 3], fingers: [null, 1, 3, 1, 2, 1], baseFret: 3,
-    barres: [{ fret: 3, fromString: 1, toString: 5 }] },
-  aShapeM7("Cm7_v2", "Cm7", "C", 8),
+  { id: "Cm7", name: "Cm7", root: "C", quality: "m7", position: "Open",
+    strings: [null, 3, 1, 3, 1, null], fingers: [null, 3, 1, 4, 1, null], baseFret: 1,
+    barres: [{ fret: 1, fromString: 2, toString: 4 }] },
+  aShapeM7("Cm7_v2", "Cm7", "C", 3),
+  aShapeM7("Cm7_v3", "Cm7", "C", 8),
 
   // ══════════════════════════════════════════════════════════
   // MAJOR 7TH
   // ══════════════════════════════════════════════════════════
 
-  // Cmaj7 — 9 voicings
+  // Cmaj7 — 9+ voicings
   { id: "Cmaj7", name: "Cmaj7", root: "C", quality: "maj7", position: "Open",
     strings: [null, 3, 2, 0, 0, 0], fingers: [null, 3, 2, null, null, null], baseFret: 1 },
+  { id: "Cmaj7_std", name: "Cmaj7", root: "C", quality: "maj7", position: "Open (alt)",
+    strings: [null, null, 2, 4, 1, 3], fingers: [null, null, 2, 4, 1, 3], baseFret: 1 },
   { id: "Cmaj7_v2", name: "Cmaj7", root: "C", quality: "maj7", position: "Open (v2)",
     strings: [null, 3, 2, 4, 0, 0], fingers: [null, 2, 1, 4, null, null], baseFret: 1 },
   { id: "Cmaj7_v3", name: "Cmaj7", root: "C", quality: "maj7", position: "3fr",
@@ -282,10 +285,14 @@ export const CHORDS: ChordDefinition[] = [
   { id: "Cmaj7_v9", name: "Cmaj7", root: "C", quality: "maj7", position: "Open (v4)",
     strings: [0, 3, 2, 0, 0, 0], fingers: [null, 3, 2, null, null, null], baseFret: 1 },
   { id: "Dmaj7", name: "Dmaj7", root: "D", quality: "maj7", position: "Open",
-    strings: [null, null, 0, 2, 2, 2], fingers: [null, null, null, 1, 2, 3], baseFret: 1 },
+    strings: [null, null, 0, 2, 2, 2], fingers: [null, null, null, 1, 1, 1], baseFret: 1 },
   { id: "Emaj7", name: "Emaj7", root: "E", quality: "maj7", position: "Open",
+    strings: [0, null, 1, 1, 0, null], fingers: [null, null, 2, 3, null, null], baseFret: 1 },
+  { id: "Emaj7_v2", name: "Emaj7", root: "E", quality: "maj7", position: "Open (full)",
     strings: [0, 2, 1, 1, 0, 0], fingers: [null, 3, 1, 2, null, null], baseFret: 1 },
   { id: "Gmaj7", name: "Gmaj7", root: "G", quality: "maj7", position: "Open",
+    strings: [null, 2, 0, 0, 0, 2], fingers: [null, 2, null, null, null, 3], baseFret: 1 },
+  { id: "Gmaj7_v2", name: "Gmaj7", root: "G", quality: "maj7", position: "Open (full)",
     strings: [3, 2, 0, 0, 0, 2], fingers: [3, 2, null, null, null, 1], baseFret: 1 },
   { id: "Amaj7", name: "Amaj7", root: "A", quality: "maj7", position: "Open",
     strings: [null, 0, 2, 1, 2, 0], fingers: [null, null, 2, 1, 3, null], baseFret: 1 },
@@ -295,12 +302,18 @@ export const CHORDS: ChordDefinition[] = [
   // ══════════════════════════════════════════════════════════
 
   { id: "Asus2", name: "Asus2", root: "A", quality: "sus2", position: "Open",
-    strings: [null, 0, 2, 2, 0, 0], fingers: [null, null, 1, 2, null, null], baseFret: 1 },
+    strings: [null, 0, 2, 2, 0, 0], fingers: [null, null, 2, 3, null, null], baseFret: 1 },
   { id: "Dsus2", name: "Dsus2", root: "D", quality: "sus2", position: "Open",
     strings: [null, null, 0, 2, 3, 0], fingers: [null, null, null, 1, 2, null], baseFret: 1 },
-  { id: "Esus2", name: "Esus2", root: "E", quality: "sus2", position: "Open",
+  { id: "Esus2", name: "Esus2", root: "E", quality: "sus2", position: "2fr",
+    strings: [null, null, 2, 4, 5, 2], fingers: [null, null, 1, 3, 4, 1], baseFret: 2,
+    barres: [{ fret: 2, fromString: 2, toString: 5 }] },
+  { id: "Esus2_v2", name: "Esus2", root: "E", quality: "sus2", position: "Open",
     strings: [0, 2, 4, 4, 0, 0], fingers: [null, 1, 3, 4, null, null], baseFret: 1 },
-  { id: "Gsus2", name: "Gsus2", root: "G", quality: "sus2", position: "Open",
+  { id: "Gsus2", name: "Gsus2", root: "G", quality: "sus2", position: "5fr",
+    strings: [null, null, 5, 7, 8, 5], fingers: [null, null, 1, 3, 4, 1], baseFret: 4,
+    barres: [{ fret: 5, fromString: 2, toString: 5 }] },
+  { id: "Gsus2_v2", name: "Gsus2", root: "G", quality: "sus2", position: "Open",
     strings: [3, 0, 0, 0, 3, 3], fingers: [2, null, null, null, 3, 4], baseFret: 1 },
 
   // ══════════════════════════════════════════════════════════
@@ -312,11 +325,14 @@ export const CHORDS: ChordDefinition[] = [
   { id: "Dsus4", name: "Dsus4", root: "D", quality: "sus4", position: "Open",
     strings: [null, null, 0, 2, 3, 3], fingers: [null, null, null, 1, 2, 3], baseFret: 1 },
   { id: "Esus4", name: "Esus4", root: "E", quality: "sus4", position: "Open",
-    strings: [0, 2, 2, 2, 0, 0], fingers: [null, 2, 3, 4, null, null], baseFret: 1 },
-  { id: "Gsus4", name: "Gsus4", root: "G", quality: "sus4", position: "Open",
+    strings: [0, 2, 2, 2, 0, 0], fingers: [null, 1, 1, 1, null, null], baseFret: 1 },
+  { id: "Gsus4", name: "Gsus4", root: "G", quality: "sus4", position: "3fr",
+    strings: [3, 5, 5, 5, 3, 3], fingers: [1, 2, 3, 4, 1, 1], baseFret: 3,
+    barres: [{ fret: 3, fromString: 0, toString: 5 }] },
+  { id: "Gsus4_v2", name: "Gsus4", root: "G", quality: "sus4", position: "Open",
     strings: [3, 3, 0, 0, 1, 3], fingers: [3, 4, null, null, 1, 2], baseFret: 1 },
   { id: "Csus4", name: "Csus4", root: "C", quality: "sus4", position: "Open",
-    strings: [null, 3, 3, 0, 1, 1], fingers: [null, 3, 4, null, 1, 1], baseFret: 1 },
+    strings: [null, 3, 3, 0, 1, null], fingers: [null, 3, 4, null, 1, null], baseFret: 1 },
 
   // ══════════════════════════════════════════════════════════
   // DIMINISHED
@@ -326,7 +342,9 @@ export const CHORDS: ChordDefinition[] = [
     strings: [null, 2, 3, 4, 3, null], fingers: [null, 1, 2, 4, 3, null], baseFret: 1 },
   { id: "Cdim", name: "Cdim", root: "C", quality: "dim", position: "3fr",
     strings: [null, 3, 4, 5, 4, null], fingers: [null, 1, 2, 4, 3, null], baseFret: 3 },
-  { id: "Ddim", name: "Ddim", root: "D", quality: "dim", position: "Open",
+  { id: "Ddim", name: "Ddim", root: "D", quality: "dim", position: "5fr",
+    strings: [null, 5, 6, 7, 6, null], fingers: [null, 1, 2, 4, 3, null], baseFret: 4 },
+  { id: "Ddim_v2", name: "Ddim", root: "D", quality: "dim", position: "Open",
     strings: [null, null, 0, 1, 0, 1], fingers: [null, null, null, 1, null, 2], baseFret: 1 },
   { id: "Adim", name: "Adim", root: "A", quality: "dim", position: "Open",
     strings: [null, 0, 1, 2, 1, null], fingers: [null, null, 1, 3, 2, null], baseFret: 1 },
@@ -352,6 +370,8 @@ export const CHORDS: ChordDefinition[] = [
 
   { id: "Cadd9", name: "Cadd9", root: "C", quality: "add9", position: "Open",
     strings: [null, 3, 2, 0, 3, 0], fingers: [null, 2, 1, null, 3, null], baseFret: 1 },
+  { id: "Cadd9_v2", name: "Cadd9", root: "C", quality: "add9", position: "5fr",
+    strings: [8, 7, 5, 7, 5, null], fingers: [4, 2, 1, 3, 1, null], baseFret: 4 },
   { id: "Dadd9", name: "Dadd9", root: "D", quality: "add9", position: "Open",
     strings: [null, null, 0, 2, 3, 0], fingers: [null, null, null, 1, 2, null], baseFret: 1 },
   { id: "Eadd9", name: "Eadd9", root: "E", quality: "add9", position: "Open",
@@ -367,6 +387,8 @@ export const CHORDS: ChordDefinition[] = [
 
   // F#m7♭5 — common voicing (2nd position)
   { id: "Fsm7b5", name: "F#m7♭5", root: "F#", quality: "m7b5", position: "2fr",
+    strings: [2, null, 2, 2, 1, null], fingers: [2, null, 3, 4, 1, null], baseFret: 1 },
+  { id: "Fsm7b5_open", name: "F#m7♭5", root: "F#", quality: "m7b5", position: "Open",
     strings: [2, 0, 2, 2, 1, 0], fingers: [2, null, 3, 4, 1, null], baseFret: 1 },
   // F#m7♭5 — barre voicing (9th position, Am7b5 shape)
   { id: "Fsm7b5_v2", name: "F#m7♭5", root: "F#", quality: "m7b5", position: "9fr",
@@ -375,6 +397,8 @@ export const CHORDS: ChordDefinition[] = [
 
   // Bm7♭5
   { id: "Bm7b5", name: "Bm7♭5", root: "B", quality: "m7b5", position: "Open",
+    strings: [null, null, 0, 2, 0, 1], fingers: [null, null, null, 2, null, 1], baseFret: 1 },
+  { id: "Bm7b5_v2", name: "Bm7♭5", root: "B", quality: "m7b5", position: "2fr",
     strings: [null, 2, 3, 2, 3, null], fingers: [null, 1, 2, 1, 3, null], baseFret: 1,
     barres: [{ fret: 2, fromString: 1, toString: 3 }] },
 

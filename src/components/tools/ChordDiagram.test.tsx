@@ -5,7 +5,7 @@ import { CHORDS } from "@/lib/chordData";
 describe("ChordDiagram", () => {
   const cMajor = CHORDS.find((c) => c.id === "C_major")!;
   const fMajor = CHORDS.find((c) => c.id === "F_major")!;
-  const abMajor = CHORDS.find((c) => c.id === "Ab_major")!;
+  const abMajor = CHORDS.find((c) => c.id === "Ab_major_v2")!;
 
   test("renders an SVG element", () => {
     const { container } = render(<ChordDiagram chord={cMajor} />);
