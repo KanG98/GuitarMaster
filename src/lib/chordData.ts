@@ -417,6 +417,11 @@ export const CHORDS: ChordDefinition[] = [
   // G/B — G major with B in bass
   { id: "G_over_B", name: "G/B", root: "G", quality: "slash", position: "Open",
     strings: [null, 2, 0, 0, 0, 3], fingers: [null, 1, null, null, null, 3], baseFret: 1 },
+
+  // Fm/Ab — Fm with Ab in bass
+  { id: "Fm_over_Ab", name: "Fm/Ab", root: "F", quality: "slash", position: "1fr",
+    strings: [4, 3, 3, 1, 1, 1], fingers: [4, 2, 3, 1, 1, 1], baseFret: 1,
+    barres: [{ fret: 1, fromString: 3, toString: 5 }] },
 ];
 
 export const QUALITY_LABELS: Record<ChordQuality, string> = {
