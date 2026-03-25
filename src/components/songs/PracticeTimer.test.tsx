@@ -7,10 +7,14 @@ jest.mock("@/lib/fileService", () => ({
   updatePracticeTime: jest.fn(),
 }));
 
+jest.mock("@/lib/practiceSessionService", () => ({
+  logPracticeSession: jest.fn(),
+}));
+
 const mockUpdatePracticeTime = updatePracticeTime as jest.Mock;
 
 describe("PracticeTimer", () => {
-  const defaultProps = { songId: "song-1", initialSeconds: 0 };
+  const defaultProps = { songId: "song-1", songName: "Test Song", initialSeconds: 0 };
 
   beforeEach(() => {
     jest.useFakeTimers();

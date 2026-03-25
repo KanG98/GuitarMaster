@@ -4,15 +4,17 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Timer, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updatePracticeTime } from "@/lib/fileService";
+import { logPracticeSession } from "@/lib/practiceSessionService";
 
 interface PracticeTimerProps {
   songId: string;
+  songName: string;
   initialSeconds: number;
   secondsRef?: React.RefObject<number>;
   isPlaying?: boolean;
 }
 
-export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSecondsRef, isPlaying }: PracticeTimerProps) {
+export function PracticeTimer({ songId, songName, initialSeconds, secondsRef: externalSecondsRef, isPlaying }: PracticeTimerProps) {
   const videoControlled = isPlaying !== undefined;
   const [seconds, setSeconds] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(!videoControlled);
@@ -84,9 +86,10 @@ export function PracticeTimer({ songId, initialSeconds, secondsRef: externalSeco
       const delta = secondsRef.current - savedSecondsRef.current;
       if (delta > 0) {
         updatePracticeTime(songId, delta);
+        logPracticeSession(songId, songName, secondsRef.current - initialSeconds);
       }
     };
-  }, [songId]);
+  }, [songId, songName, initialSeconds]);
 
   const toggle = () => {
     if (isRunning) pause();

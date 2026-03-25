@@ -95,7 +95,7 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <PracticeTimer songId={song.id} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} isPlaying={activeVideoId ? isVideoPlaying : undefined} />
+          <PracticeTimer songId={song.id} songName={song.name} initialSeconds={song.totalPracticeSeconds} secondsRef={practiceSecondsRef} isPlaying={activeVideoId ? isVideoPlaying : undefined} />
           <Button
             variant="outline"
             size="sm"
