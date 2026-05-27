@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowLeft, Trash2, User, Music, Mic2 } from "lucide-react";
+import { ArrowLeft, Trash2, User, Music, Mic2, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload/UploadZone";
 import { FileGallery } from "@/components/viewer/FileGallery";
 import { FileViewer } from "@/components/viewer/FileViewer";
 import { PracticeTimer } from "./PracticeTimer";
 import { YouTubeSection } from "./YouTubeSection";
-import { SongRecord, updatePracticeTime } from "@/lib/fileService";
+import { SongRecord, updatePracticeTime, updateSongDetails } from "@/lib/fileService";
 import { buildBackingTrackQuery } from "@/lib/youtubeService";
 import { useSongFiles } from "@/hooks/useSongFiles";
 import { useYouTubeSearch } from "@/hooks/useYouTubeSearch";
@@ -18,13 +18,40 @@ interface SongDetailProps {
   song: SongRecord;
   onBack: () => void;
   onDeleteSong: () => void;
+  onSongUpdate: (updated: SongRecord) => void;
 }
 
-export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
+export function SongDetail({ song, onBack, onDeleteSong, onSongUpdate }: SongDetailProps) {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
   const practiceSecondsRef = useRef(song.totalPracticeSeconds);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [videoMode, setVideoMode] = useState<"original" | "backing">("original");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(song.name);
+  const [editArtist, setEditArtist] = useState(song.artist);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleStartEdit = () => {
+    setEditName(song.name);
+    setEditArtist(song.artist);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editName.trim()) return;
+    setIsSaving(true);
+    try {
+      await updateSongDetails(song.id, editName.trim(), editArtist.trim());
+      onSongUpdate({ ...song, name: editName.trim(), artist: editArtist.trim() });
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Use extracted hooks
   const {
@@ -84,13 +111,52 @@ export function SongDetail({ song, onBack, onDeleteSong }: SongDetailProps) {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
-          <div>
-            <h2 className="text-xl font-bold">{song.name}</h2>
-            {song.artist && (
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {song.artist}
-              </p>
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="text-xl font-bold bg-transparent border-b-2 border-primary outline-none px-1 min-w-0 w-full sm:w-auto"
+                  autoFocus
+                  placeholder="Song name"
+                />
+                <div className="flex items-center gap-1 text-sm">
+                  <User className="h-3 w-3 text-muted-foreground" />
+                  <input
+                    value={editArtist}
+                    onChange={(e) => setEditArtist(e.target.value)}
+                    className="bg-transparent border-b-2 border-primary outline-none px-1 min-w-0 w-32"
+                    placeholder="Artist"
+                  />
+                </div>
+                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSaveEdit} disabled={!editName.trim() || isSaving}>
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCancelEdit}>
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <div className="group flex items-center gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold">{song.name}</h2>
+                  {song.artist && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {song.artist}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleStartEdit}
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </div>
             )}
           </div>
         </div>

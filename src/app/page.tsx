@@ -65,6 +65,7 @@ export default function Home() {
                 song={selectedSong}
                 onBack={() => { setSelectedSong(null); setTimeout(refresh, 500); }}
                 onDeleteSong={() => handleDeleteSong(selectedSong)}
+                onSongUpdate={setSelectedSong}
               />
             ) : (
               <SongList

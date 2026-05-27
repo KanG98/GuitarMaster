@@ -128,6 +128,10 @@ export async function updateSongBackingTrack(songId: string, videoId: string | n
   });
 }
 
+export async function updateSongDetails(songId: string, name: string, artist: string): Promise<void> {
+  await updateDoc(doc(db, SONGS_COLLECTION, songId), { name, artist });
+}
+
 // --- File CRUD (scoped to a song) ---
 
 export async function uploadFile(songId: string, file: File): Promise<FileRecord> {
