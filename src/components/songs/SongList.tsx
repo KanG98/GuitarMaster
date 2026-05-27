@@ -5,6 +5,7 @@ import { Plus, Music, Search, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SongCard } from "./SongCard";
 import { AddSongDialog } from "./AddSongDialog";
+import { SongLookupDialog } from "./SongLookupDialog";
 import { SongRecord } from "@/lib/fileService";
 
 interface SongListProps {
@@ -13,6 +14,13 @@ interface SongListProps {
   onSelectSong: (song: SongRecord) => void;
   onCreateSong: (name: string, artist: string) => Promise<void>;
   onDeleteSong: (song: SongRecord) => void;
+  onLookupAddSong: (
+    name: string,
+    artist: string,
+    serverFilePath: string,
+    fileName: string,
+    mimeType: string
+  ) => Promise<void>;
 }
 
 export function SongList({
@@ -21,8 +29,10 @@ export function SongList({
   onSelectSong,
   onCreateSong,
   onDeleteSong,
+  onLookupAddSong,
 }: SongListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
   const [artistFilter, setArtistFilter] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
@@ -143,6 +153,10 @@ export function SongList({
               )}
             </div>
           )}
+          <Button variant="outline" onClick={() => setLookupOpen(true)}>
+            <Search className="h-4 w-4 mr-1" />
+            Look Up
+          </Button>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             Add Song
@@ -173,6 +187,12 @@ export function SongList({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={onCreateSong}
+      />
+
+      <SongLookupDialog
+        open={lookupOpen}
+        onOpenChange={setLookupOpen}
+        onAddSong={onLookupAddSong}
       />
     </>
   );

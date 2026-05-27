@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Header, ToolName } from "@/components/shared/Header";
 import { SongList } from "@/components/songs/SongList";
 import { SongDetail } from "@/components/songs/SongDetail";
@@ -11,12 +11,40 @@ import { RhythmTrainer } from "@/components/tools/RhythmTrainer";
 import { Metronome } from "@/components/tools/Metronome";
 import { PracticeStats } from "@/components/tools/PracticeStats";
 import { useSongManager } from "@/hooks/useSongManager";
-import { SongRecord } from "@/lib/fileService";
+import { SongRecord, createSong, uploadFile } from "@/lib/fileService";
 
 export default function Home() {
   const { songs, isLoading, addSong, removeSong, refresh } = useSongManager();
   const [selectedSong, setSelectedSong] = useState<SongRecord | null>(null);
   const [currentTool, setCurrentTool] = useState<ToolName>("songs");
+
+  useEffect(() => {
+    fetch("/api/songs/init").catch(() => {});
+  }, []);
+
+  const handleLookupAddSong = useCallback(
+    async (
+      name: string,
+      artist: string,
+      serverFilePath: string,
+      fileName: string,
+      mimeType: string
+    ) => {
+      const record = await createSong(name, artist);
+
+      const res = await fetch(
+        `/api/songs/file?path=${encodeURIComponent(serverFilePath)}`
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch song file");
+      }
+      const blob = await res.blob();
+      const file = new File([blob], fileName, { type: mimeType });
+      await uploadFile(record.id, file);
+      await refresh();
+    },
+    [refresh]
+  );
 
   const handleDeleteSong = async (song: SongRecord) => {
     if (!confirm(`Delete "${song.name}" and all its files?`)) return;
@@ -45,6 +73,7 @@ export default function Home() {
                 onSelectSong={setSelectedSong}
                 onCreateSong={addSong}
                 onDeleteSong={handleDeleteSong}
+                onLookupAddSong={handleLookupAddSong}
               />
             )}
           </>
