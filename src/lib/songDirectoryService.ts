@@ -36,12 +36,8 @@ function getProjectRoot(): string {
   return process.cwd();
 }
 
-function getParentDir(): string {
-  return join(getProjectRoot(), '..');
-}
-
 export function getSongsDirectoryPath(): string {
-  return join(getParentDir(), 'songs');
+  return join(getProjectRoot(), 'songs');
 }
 
 function getOpenCCVariants(query: string): string[] {
