@@ -11,7 +11,7 @@ import { RhythmTrainer } from "@/components/tools/RhythmTrainer";
 import { Metronome } from "@/components/tools/Metronome";
 import { PracticeStats } from "@/components/tools/PracticeStats";
 import { useSongManager } from "@/hooks/useSongManager";
-import { SongRecord, createSong, uploadFile } from "@/lib/fileService";
+import { SongRecord, createSong, uploadFile, updateSongPracticeStatus } from "@/lib/fileService";
 
 export default function Home() {
   const { songs, isLoading, addSong, removeSong, togglePracticeStatus, togglePin, refresh } = useSongManager();
@@ -53,6 +53,15 @@ export default function Home() {
       setSelectedSong(null);
     }
   };
+
+  const handleCreatePractice = useCallback(
+    async (name: string, artist: string) => {
+      const record = await createSong(name, artist);
+      await updateSongPracticeStatus(record.id, true);
+      await refresh();
+    },
+    [refresh]
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -96,7 +105,7 @@ export default function Home() {
                 songs={songs}
                 isLoading={isLoading}
                 onSelectSong={setSelectedSong}
-                onCreateSong={addSong}
+                onCreateSong={handleCreatePractice}
                 onDeleteSong={handleDeleteSong}
                 onLookupAddSong={handleLookupAddSong}
                 section="practices"

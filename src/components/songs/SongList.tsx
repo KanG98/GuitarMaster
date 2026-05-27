@@ -173,17 +173,15 @@ export function SongList({
             </div>
           )}
           {section === "songs" && (
-            <>
-              <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
-                <Search className="h-4 w-4 mr-1" />
-                Look Up
-              </Button>
-              <Button onClick={() => setDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" />
-                Add Song
-              </Button>
-            </>
+            <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
+              <Search className="h-4 w-4 mr-1" />
+              Look Up
+            </Button>
           )}
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            {section === "practices" ? "Add Practice" : "Add Song"}
+          </Button>
         </div>
       </div>
 
