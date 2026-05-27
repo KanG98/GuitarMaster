@@ -18,6 +18,8 @@ interface SongDocument {
   name: string;
   artist: string;
   totalPracticeSeconds: number;
+  practicing: boolean;
+  pinned: boolean;
   youtubeVideoId: string | null;
   youtubeBackingTrackId: string | null;
   createdAt: Timestamp;
@@ -40,6 +42,8 @@ export interface SongRecord {
   name: string;
   artist: string;
   totalPracticeSeconds: number;
+  practicing: boolean;
+  pinned: boolean;
   youtubeVideoId: string | null;
   youtubeBackingTrackId: string | null;
   createdAt: Date;
@@ -64,6 +68,8 @@ export async function createSong(name: string, artist: string): Promise<SongReco
     name,
     artist,
     totalPracticeSeconds: 0,
+    practicing: false,
+    pinned: false,
     createdAt: serverTimestamp(),
   });
 
@@ -72,6 +78,8 @@ export async function createSong(name: string, artist: string): Promise<SongReco
     name,
     artist,
     totalPracticeSeconds: 0,
+    practicing: false,
+    pinned: false,
     youtubeVideoId: null,
     youtubeBackingTrackId: null,
     createdAt: new Date(),
@@ -88,13 +96,18 @@ export async function getSongs(): Promise<SongRecord[]> {
       name: data.name,
       artist: data.artist ?? "",
       totalPracticeSeconds: data.totalPracticeSeconds ?? 0,
+      practicing: data.practicing ?? false,
+      pinned: data.pinned ?? false,
       youtubeVideoId: data.youtubeVideoId ?? null,
       youtubeBackingTrackId: data.youtubeBackingTrackId ?? null,
       createdAt: data.createdAt?.toDate() ?? new Date(),
     };
   });
 
-  return songs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  return songs.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
 }
 
 export async function deleteSong(songId: string): Promise<void> {
@@ -202,4 +215,12 @@ export async function updateFileOrder(songId: string, fileIds: string[]): Promis
 
 export async function deleteFile(songId: string, fileId: string): Promise<void> {
   await deleteDoc(doc(db, SONGS_COLLECTION, songId, "files", fileId));
+}
+
+export async function updateSongPracticeStatus(songId: string, practicing: boolean): Promise<void> {
+  await updateDoc(doc(db, SONGS_COLLECTION, songId), { practicing });
+}
+
+export async function updateSongPinStatus(songId: string, pinned: boolean): Promise<void> {
+  await updateDoc(doc(db, SONGS_COLLECTION, songId), { pinned });
 }

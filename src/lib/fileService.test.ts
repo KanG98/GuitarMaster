@@ -18,6 +18,7 @@ import {
   updateFileOrder,
   updatePracticeTime,
   updateSongVideo,
+  updateSongPinStatus,
 } from "./fileService";
 
 beforeEach(() => {
@@ -35,6 +36,8 @@ describe("Song CRUD", () => {
     expect(result.name).toBe("Hotel California");
     expect(result.artist).toBe("Eagles");
     expect(result.totalPracticeSeconds).toBe(0);
+    expect(result.practicing).toBe(false);
+    expect(result.pinned).toBe(false);
     expect(result.youtubeVideoId).toBeNull();
     expect(result.createdAt).toBeInstanceOf(Date);
   });
@@ -125,6 +128,14 @@ describe("Song CRUD", () => {
     mockUpdateDoc.mockResolvedValue(undefined);
 
     await updateSongVideo("song-1", null);
+
+    expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
+  });
+
+  test("updateSongPinStatus toggles pinned field", async () => {
+    mockUpdateDoc.mockResolvedValue(undefined);
+
+    await updateSongPinStatus("song-1", true);
 
     expect(mockUpdateDoc).toHaveBeenCalledTimes(1);
   });

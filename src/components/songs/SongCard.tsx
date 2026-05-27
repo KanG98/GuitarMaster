@@ -1,6 +1,6 @@
 "use client";
 
-import { Music, Trash2, User, Timer } from "lucide-react";
+import { Music, Trash2, User, Timer, ArrowRightLeft, Pin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SongRecord } from "@/lib/fileService";
@@ -10,9 +10,11 @@ interface SongCardProps {
   song: SongRecord;
   onClick: () => void;
   onDelete: () => void;
+  onTogglePractice?: () => void;
+  onTogglePin?: () => void;
 }
 
-export function SongCard({ song, onClick, onDelete }: SongCardProps) {
+export function SongCard({ song, onClick, onDelete, onTogglePractice, onTogglePin }: SongCardProps) {
   return (
     <Card
       className="cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01] group"
@@ -50,17 +52,51 @@ export function SongCard({ song, onClick, onDelete }: SongCardProps) {
               )}
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {onTogglePin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                  song.pinned
+                    ? "text-primary opacity-100"
+                    : "text-muted-foreground hover:text-primary"
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePin();
+                }}
+                title={song.pinned ? "Unpin" : "Pin to top"}
+              >
+                <Pin className={`h-4 w-4 ${song.pinned ? "fill-primary" : ""}`} />
+              </Button>
+            )}
+            {onTogglePractice && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePractice();
+                }}
+                title={song.practicing ? "Move to Songs" : "Move to Practices"}
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

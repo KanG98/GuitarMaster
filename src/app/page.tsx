@@ -14,7 +14,7 @@ import { useSongManager } from "@/hooks/useSongManager";
 import { SongRecord, createSong, uploadFile } from "@/lib/fileService";
 
 export default function Home() {
-  const { songs, isLoading, addSong, removeSong, refresh } = useSongManager();
+  const { songs, isLoading, addSong, removeSong, togglePracticeStatus, togglePin, refresh } = useSongManager();
   const [selectedSong, setSelectedSong] = useState<SongRecord | null>(null);
   const [currentTool, setCurrentTool] = useState<ToolName>("songs");
 
@@ -75,6 +75,33 @@ export default function Home() {
                 onCreateSong={addSong}
                 onDeleteSong={handleDeleteSong}
                 onLookupAddSong={handleLookupAddSong}
+                section="songs"
+                onTogglePractice={(songId) => togglePracticeStatus(songId, true)}
+                onTogglePin={togglePin}
+              />
+            )}
+          </>
+        )}
+        {currentTool === "practices" && (
+          <>
+            {selectedSong ? (
+              <SongDetail
+                song={selectedSong}
+                onBack={() => { setSelectedSong(null); setTimeout(refresh, 500); }}
+                onDeleteSong={() => handleDeleteSong(selectedSong)}
+                onSongUpdate={setSelectedSong}
+              />
+            ) : (
+              <SongList
+                songs={songs}
+                isLoading={isLoading}
+                onSelectSong={setSelectedSong}
+                onCreateSong={addSong}
+                onDeleteSong={handleDeleteSong}
+                onLookupAddSong={handleLookupAddSong}
+                section="practices"
+                onTogglePractice={(songId) => togglePracticeStatus(songId, false)}
+                onTogglePin={togglePin}
               />
             )}
           </>

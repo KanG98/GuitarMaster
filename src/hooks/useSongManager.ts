@@ -8,6 +8,8 @@ import {
   deleteSong,
   updateSongVideo,
   updateSongBackingTrack,
+  updateSongPracticeStatus,
+  updateSongPinStatus,
 } from "@/lib/fileService";
 import { searchYouTube, buildGuitarTabQuery, buildBackingTrackQuery } from "@/lib/youtubeService";
 
@@ -17,6 +19,8 @@ interface UseSongManagerReturn {
   error: string | null;
   addSong: (name: string, artist: string) => Promise<void>;
   removeSong: (songId: string) => Promise<void>;
+  togglePracticeStatus: (songId: string, practicing: boolean) => Promise<void>;
+  togglePin: (songId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -89,5 +93,47 @@ export function useSongManager(): UseSongManagerReturn {
     []
   );
 
-  return { songs, isLoading, error, addSong, removeSong, refresh };
+  const togglePracticeStatus = useCallback(
+    async (songId: string, practicing: boolean) => {
+      setError(null);
+      try {
+        await updateSongPracticeStatus(songId, practicing);
+        setSongs((prev) =>
+          prev.map((s) =>
+            s.id === songId ? { ...s, practicing } : s
+          )
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to update song");
+      }
+    },
+    []
+  );
+
+  const togglePin = useCallback(
+    async (songId: string) => {
+      setError(null);
+      setSongs((prev) => {
+        const newSongs = prev.map((s) =>
+          s.id === songId ? { ...s, pinned: !s.pinned } : s
+        );
+        return newSongs.sort((a, b) => {
+          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+      });
+      try {
+        const target = songs.find((s) => s.id === songId);
+        if (target) {
+          await updateSongPinStatus(songId, !target.pinned);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to pin song");
+        await refresh();
+      }
+    },
+    [songs, refresh]
+  );
+
+  return { songs, isLoading, error, addSong, removeSong, togglePracticeStatus, togglePin, refresh };
 }

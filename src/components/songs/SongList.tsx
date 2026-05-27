@@ -21,6 +21,9 @@ interface SongListProps {
     fileName: string,
     mimeType: string
   ) => Promise<void>;
+  section?: "songs" | "practices";
+  onTogglePractice?: (songId: string) => void;
+  onTogglePin?: (songId: string) => void;
 }
 
 export function SongList({
@@ -30,6 +33,9 @@ export function SongList({
   onCreateSong,
   onDeleteSong,
   onLookupAddSong,
+  section = "songs",
+  onTogglePractice,
+  onTogglePin,
 }: SongListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lookupOpen, setLookupOpen] = useState(false);
@@ -40,20 +46,25 @@ export function SongList({
   const filterRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const sectionSongs = useMemo(
+    () => section === "practices" ? songs.filter((s) => s.practicing) : songs.filter((s) => !s.practicing),
+    [songs, section]
+  );
+
   const artists = useMemo(() => {
     const map = new Map<string, number>();
-    songs.forEach((s) => { if (s.artist) map.set(s.artist, (map.get(s.artist) || 0) + 1); });
+    sectionSongs.forEach((s) => { if (s.artist) map.set(s.artist, (map.get(s.artist) || 0) + 1); });
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b));
-  }, [songs]);
+  }, [sectionSongs]);
 
   const filteredArtists = filterSearch
     ? artists.filter(([name]) => name.toLowerCase().includes(filterSearch.toLowerCase()))
     : artists;
 
   const filteredSongs = artistFilter
-    ? songs.filter((s) => s.artist === artistFilter)
-    : songs;
+    ? sectionSongs.filter((s) => s.artist === artistFilter)
+    : sectionSongs;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -90,7 +101,7 @@ export function SongList({
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">Your Songs</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{section === "practices" ? "Your Practices" : "Your Songs"}</h2>
         <div className="flex items-center gap-2">
           {artists.length > 0 && (
             <div className="relative" ref={filterRef} data-testid="artist-filter">
@@ -139,7 +150,7 @@ export function SongList({
                         artistFilter === null ? "font-semibold text-primary" : ""
                       }`}
                     >
-                      All artists ({songs.length})
+                      All artists ({sectionSongs.length})
                     </button>
                     {filteredArtists.map(([name, count]) => (
                       <button
@@ -161,22 +172,30 @@ export function SongList({
               )}
             </div>
           )}
-          <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
-            <Search className="h-4 w-4 mr-1" />
-            Look Up
-          </Button>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Song
-          </Button>
+          {section === "songs" && (
+            <>
+              <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
+                <Search className="h-4 w-4 mr-1" />
+                Look Up
+              </Button>
+              <Button onClick={() => setDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Song
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {songs.length === 0 ? (
+      {sectionSongs.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Music className="h-12 w-12 mx-auto mb-3 opacity-40" />
-          <p>No songs yet</p>
-          <p className="text-sm mt-1">Click &quot;Add Song&quot; to get started</p>
+          <p>{section === "practices" ? "No songs in practice list" : "No songs yet"}</p>
+          <p className="text-sm mt-1">
+            {section === "practices"
+              ? "Click the swap icon on a song to add it here"
+              : "Click \"Add Song\" to get started"}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -186,6 +205,8 @@ export function SongList({
               song={song}
               onClick={() => onSelectSong(song)}
               onDelete={() => onDeleteSong(song)}
+              onTogglePractice={onTogglePractice ? () => onTogglePractice(song.id) : undefined}
+              onTogglePin={onTogglePin ? () => onTogglePin(song.id) : undefined}
             />
           ))}
         </div>

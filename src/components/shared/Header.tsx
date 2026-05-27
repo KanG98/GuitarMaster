@@ -1,10 +1,10 @@
 "use client";
 
-import { Guitar, Ear, BookOpen, Music, Activity, Timer, BarChart3 } from "lucide-react";
+import { Guitar, Ear, BookOpen, Music, Activity, Timer, BarChart3, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemePicker } from "./ThemePicker";
 
-export type ToolName = "songs" | "earTrainer" | "chordLibrary" | "theory" | "rhythm" | "metronome" | "stats";
+export type ToolName = "songs" | "practices" | "earTrainer" | "chordLibrary" | "theory" | "rhythm" | "metronome" | "stats";
 
 interface HeaderProps {
   currentTool: ToolName;
@@ -35,6 +35,16 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
             >
               <Guitar className="h-4 w-4 sm:mr-1" />
               <span className="hidden sm:inline">Songs</span>
+            </Button>
+            <Button
+              variant={currentTool === "practices" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => onToolChange("practices")}
+              data-testid="nav-practices"
+              title="Practices"
+            >
+              <ListMusic className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Practices</span>
             </Button>
             <Button
               variant={currentTool === "earTrainer" ? "secondary" : "ghost"}
