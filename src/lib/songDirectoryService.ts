@@ -1,10 +1,10 @@
 import { execSync } from 'child_process';
-import { existsSync, writeFileSync, statSync, readFileSync } from 'fs';
+import { existsSync, writeFileSync, statSync, readFileSync, readdirSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { join, basename, extname, relative } from 'path';
 
 const SONGS_REPO_URL = 'https://github.com/KanG98/songs.git';
-const ZIP_FILE = 'songs.zip';
+const ZIP_PREFIX = 'songs';
 const EXTRACTED_MARKER = '.guitarmaster_extracted';
 
 const MIME_TYPES: Record<string, string> = {
@@ -96,10 +96,18 @@ export interface SongFileInfo {
   type: string;
 }
 
+function getZipFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).filter(
+    (f: string) => f.startsWith(ZIP_PREFIX) && f.endsWith('.zip')
+  );
+}
+
 export async function isSongsDirectoryReady(): Promise<boolean> {
   const songsDir = getSongsDirectoryPath();
   if (!existsSync(songsDir)) return false;
-  if (!existsSync(join(songsDir, ZIP_FILE))) return true;
+  const zips = getZipFiles(songsDir);
+  if (zips.length === 0) return true;
   return existsSync(join(songsDir, EXTRACTED_MARKER));
 }
 
@@ -121,21 +129,23 @@ export async function ensureSongsDirectoryReady(): Promise<{
     }
   }
 
-  const zipPath = join(songsDir, ZIP_FILE);
+  const zips = getZipFiles(songsDir);
   const markerPath = join(songsDir, EXTRACTED_MARKER);
 
-  if (existsSync(zipPath) && !existsSync(markerPath)) {
-    try {
-      execSync(`unzip -o "${ZIP_FILE}"`, {
-        cwd: songsDir,
-        encoding: 'utf-8',
-        timeout: 60_000,
-      });
-      writeFileSync(markerPath, '');
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return { ready: false, message: `Failed to unzip songs: ${msg}` };
+  if (zips.length > 0 && !existsSync(markerPath)) {
+    for (const zipFile of zips) {
+      try {
+        execSync(`unzip -o "${zipFile}"`, {
+          cwd: songsDir,
+          encoding: 'utf-8',
+          timeout: 60_000,
+        });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { ready: false, message: `Failed to unzip ${zipFile}: ${msg}` };
+      }
     }
+    writeFileSync(markerPath, '');
   }
 
   return { ready: true, message: 'Songs directory is ready' };
