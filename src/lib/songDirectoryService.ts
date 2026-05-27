@@ -111,6 +111,12 @@ export async function isSongsDirectoryReady(): Promise<boolean> {
   return existsSync(join(songsDir, EXTRACTED_MARKER));
 }
 
+export function hasSongFolders(): boolean {
+  const songsDir = getSongsDirectoryPath();
+  if (!existsSync(songsDir)) return false;
+  return existsSync(join(songsDir, 'songs1')) && existsSync(join(songsDir, 'songs2'));
+}
+
 export async function ensureSongsDirectoryReady(): Promise<{
   ready: boolean;
   message: string;

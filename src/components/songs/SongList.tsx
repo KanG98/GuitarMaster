@@ -33,6 +33,7 @@ export function SongList({
 }: SongListProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lookupOpen, setLookupOpen] = useState(false);
+  const [foldersReady, setFoldersReady] = useState(true);
   const [artistFilter, setArtistFilter] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
@@ -70,6 +71,13 @@ export function SongList({
   useEffect(() => {
     if (filterOpen) searchInputRef.current?.focus();
   }, [filterOpen]);
+
+  useEffect(() => {
+    fetch("/api/songs/status")
+      .then((res) => res.json())
+      .then((data) => setFoldersReady(data.ready))
+      .catch(() => setFoldersReady(false));
+  }, []);
 
   if (isLoading) {
     return (
@@ -153,7 +161,7 @@ export function SongList({
               )}
             </div>
           )}
-          <Button variant="outline" onClick={() => setLookupOpen(true)}>
+          <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
             <Search className="h-4 w-4 mr-1" />
             Look Up
           </Button>
