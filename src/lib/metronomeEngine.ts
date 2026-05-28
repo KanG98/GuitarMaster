@@ -56,9 +56,9 @@ export function calcTapTempo(taps: number[]): number | null {
 const LOOKAHEAD_MS = 25; // how often the scheduler runs
 const SCHEDULE_AHEAD_S = 0.1; // how far ahead to schedule
 
-const CLICK_FREQ_ACCENT = 6000;
-const CLICK_FREQ_NORMAL = 4500;
-const CLICK_DURATION = 0.025;
+const CLICK_FREQ_ACCENT = 1200;
+const CLICK_FREQ_NORMAL = 900;
+const CLICK_DURATION = 0.04;
 
 let audioCtx: AudioContext | null = null;
 let gainNode: GainNode | null = null;
@@ -92,9 +92,10 @@ function scheduleClick(time: number, isAccent: boolean) {
   // Sharp high-frequency tick
   const oscTick = ctx.createOscillator();
   const envTick = ctx.createGain();
-  oscTick.type = "sine";
+  oscTick.type = "triangle";
   oscTick.frequency.value = freq;
-  envTick.gain.setValueAtTime(vol * 0.9, time);
+  envTick.gain.setValueAtTime(0, time);
+  envTick.gain.linearRampToValueAtTime(vol * 0.7, time + 0.002);
   envTick.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
   oscTick.connect(envTick);
   envTick.connect(gainNode!);
