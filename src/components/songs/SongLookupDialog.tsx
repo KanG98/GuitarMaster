@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Search, Loader2, FileMusic, FolderOpen, AlertCircle } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Search, Loader2, FileMusic, FolderOpen, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -75,6 +75,20 @@ export function SongLookupDialog({
     );
     onMatchFound(match?.id ?? null);
   }, [query, songs, onMatchFound]);
+
+  const sortedResults = useMemo(() => {
+    return results
+      .map((info) => {
+        const { name, artist } = parseNameAndArtist(info.relativePath, info.fileName);
+        const existing = songs.find(
+          (s) =>
+            s.name.toLowerCase() === name.toLowerCase() ||
+            (artist && s.artist.toLowerCase() === artist.toLowerCase())
+        );
+        return { info, alreadyExists: !!existing };
+      })
+      .sort((a, b) => (a.alreadyExists === b.alreadyExists ? 0 : a.alreadyExists ? -1 : 1));
+  }, [results, songs]);
 
   const handleSearch = useCallback(
     async (e?: React.FormEvent) => {
@@ -208,21 +222,33 @@ export function SongLookupDialog({
             </div>
           ) : (
             <div className="space-y-1">
-              {results.map((info) => (
+              {sortedResults.map(({ info, alreadyExists }) => (
                 <div
                   key={info.relativePath}
-                  className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors group"
+                  className={`flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors group ${
+                    alreadyExists ? "bg-primary/5" : ""
+                  }`}
                 >
-                  <FileMusic className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  {alreadyExists ? (
+                    <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                  ) : (
+                    <FileMusic className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">
                         {info.fileName}
                       </p>
-                      {info.size > 0 && (
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
-                          {formatSize(info.size)}
+                      {alreadyExists ? (
+                        <Badge variant="default" className="text-[10px] px-1 py-0 shrink-0">
+                          In your list
                         </Badge>
+                      ) : (
+                        info.size > 0 && (
+                          <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+                            {formatSize(info.size)}
+                          </Badge>
+                        )
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
@@ -238,15 +264,19 @@ export function SongLookupDialog({
                   </div>
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleAdd(info)}
-                    disabled={isAdding === info.relativePath}
+                    variant={alreadyExists ? "secondary" : "ghost"}
+                    className={`shrink-0 transition-opacity ${
+                      alreadyExists
+                        ? "opacity-100"
+                        : "opacity-0 group-hover:opacity-100"
+                    }`}
+                    onClick={() => !alreadyExists && handleAdd(info)}
+                    disabled={alreadyExists || isAdding === info.relativePath}
                   >
                     {isAdding === info.relativePath ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
                     ) : null}
-                    Add
+                    {alreadyExists ? "Added" : "Add"}
                   </Button>
                 </div>
               ))}
