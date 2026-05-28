@@ -8,7 +8,7 @@ export interface ThemeColors {
 }
 
 export const THEMES: ThemeColors[] = [
-  { id: "default", name: "Charcoal", emoji: "🎸", primary: "oklch(0.205 0 0)", primaryForeground: "oklch(0.985 0 0)", ring: "oklch(0.708 0 0)" },
+  { id: "default", name: "Charcoal", emoji: "🎸", primary: "oklch(0.22 0.02 85)", primaryForeground: "oklch(0.985 0.003 92)", ring: "oklch(0.55 0.04 85)" },
   { id: "blue", name: "Ocean Blue", emoji: "🌊", primary: "oklch(0.55 0.2 255)", primaryForeground: "oklch(0.985 0 0)", ring: "oklch(0.65 0.15 255)" },
   { id: "pink", name: "Soft Pink", emoji: "🌸", primary: "oklch(0.65 0.15 350)", primaryForeground: "oklch(0.985 0 0)", ring: "oklch(0.75 0.1 350)" },
   { id: "teal", name: "Teal", emoji: "🧊", primary: "oklch(0.55 0.15 180)", primaryForeground: "oklch(0.985 0 0)", ring: "oklch(0.65 0.1 180)" },

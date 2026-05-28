@@ -60,7 +60,7 @@ export function PracticeStats() {
               <p className="text-xs text-muted-foreground mt-1">Total Practice</p>
             </div>
             <div className="rounded-xl border bg-card p-4 text-center">
-              <Flame className="h-5 w-5 mx-auto mb-2 text-orange-500" />
+              <Flame className="h-5 w-5 mx-auto mb-2 text-warning" />
               <p data-testid="streak-count" className="text-2xl font-bold tabular-nums">
                 {streak}
               </p>

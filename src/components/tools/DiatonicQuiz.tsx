@@ -134,7 +134,7 @@ export function DiatonicQuiz() {
 
   const getOptionClass = (option: string) => {
     if (quizState !== "feedback" || !feedback) return "";
-    if (option === feedback.correctAnswer) return "bg-emerald-100 border-emerald-500 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-500 dark:text-emerald-200";
+    if (option === feedback.correctAnswer) return "bg-success-muted border-success text-success dark:bg-success/20 dark:border-success dark:text-success";
     return "";
   };
 
@@ -252,8 +252,8 @@ export function DiatonicQuiz() {
         <div
           className={`text-center p-4 rounded-lg border ${
             feedback.type === "correct"
-              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
-              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-200"
+              ? "bg-success-muted border-success/30 text-success dark:bg-success/20 dark:border-success/40 dark:text-success"
+              : "bg-error-muted border-error/30 text-error dark:bg-error/20 dark:border-error/40 dark:text-error"
           }`}
           data-testid="feedback-overlay"
         >

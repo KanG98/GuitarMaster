@@ -467,9 +467,9 @@ export function ChordLibrary() {
                 let borderClass = "border-border hover:border-primary";
                 if (quizState === "feedback") {
                   if (isCorrectChord)
-                    borderClass = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20";
+                    borderClass = "border-success bg-success-muted dark:bg-success/10";
                   else if (isSelected)
-                    borderClass = "border-red-500 bg-red-50 dark:bg-red-950/20";
+                    borderClass = "border-error bg-error-muted dark:bg-error/10";
                 }
 
                 if (quizDirection === "nameToDiagram") {
@@ -511,8 +511,8 @@ export function ChordLibrary() {
             <div
               className={`text-center py-3 px-4 rounded-lg font-semibold text-lg ${
                 feedback.type === "correct"
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                  ? "bg-success-muted text-success dark:bg-success/20 dark:text-success"
+                  : "bg-error-muted text-error dark:bg-error/20 dark:text-error"
               }`}
               data-testid="feedback-overlay"
             >
@@ -626,8 +626,8 @@ export function ChordLibrary() {
             <div
               className={`text-center py-3 px-4 rounded-lg font-semibold text-lg ${
                 buildFeedback.type === "correct"
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"
+                  ? "bg-success-muted text-success dark:bg-success/20 dark:text-success"
+                  : "bg-error-muted text-error dark:bg-error/20 dark:text-error"
               }`}
               data-testid="build-feedback"
             >

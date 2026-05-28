@@ -373,7 +373,7 @@ export function EarTrainer() {
       {/* Feedback Overlay (note quiz only) */}
       {feedback && mode !== "interval" && (
         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50" data-testid="feedback-overlay">
-          <p className={`text-5xl font-bold animate-bounce ${feedback.type === "correct" ? "text-emerald-500" : "text-red-500"}`}>
+          <p className={`text-5xl font-bold animate-bounce ${feedback.type === "correct" ? "text-success" : "text-error"}`}>
             {feedback.type === "correct" ? "Correct!" : `It was ${feedback.note}`}
           </p>
         </div>
