@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { Search, Loader2, FileMusic, FolderOpen, AlertCircle, CheckCircle } from "lucide-react";
+import { Search, Loader2, FileMusic, FolderOpen, AlertCircle, CheckCircle, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,6 +27,7 @@ interface SongLookupDialogProps {
   foldersReady: boolean;
   songs?: SongRecord[];
   onMatchFound?: (songId: string | null) => void;
+  onNavigateToSong?: (song: SongRecord) => void;
 }
 
 function parseNameAndArtist(
@@ -55,6 +56,7 @@ export function SongLookupDialog({
   foldersReady,
   songs = [],
   onMatchFound,
+  onNavigateToSong,
 }: SongLookupDialogProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SongFileInfo[]>([]);
@@ -75,6 +77,15 @@ export function SongLookupDialog({
     );
     onMatchFound(match?.id ?? null);
   }, [query, songs, onMatchFound]);
+
+  const localMatches = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return [];
+    return songs.filter((s) =>
+      s.name.toLowerCase().includes(trimmed) ||
+      s.artist.toLowerCase().includes(trimmed)
+    );
+  }, [query, songs]);
 
   const sortedResults = useMemo(() => {
     return results
@@ -215,13 +226,48 @@ export function SongLookupDialog({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : hasSearched && results.length === 0 && !error ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No matching files found</p>
-            </div>
           ) : (
             <div className="space-y-1">
+              {localMatches.length > 0 && (
+                <>
+                  <p className="text-xs font-medium text-muted-foreground px-2 pt-1 pb-0.5">
+                    Found in your songs
+                  </p>
+                  {localMatches.map((song) => (
+                    <div
+                      key={song.id}
+                      className="flex items-center gap-3 rounded-lg p-2.5 hover:bg-muted/50 transition-colors cursor-pointer bg-primary/5"
+                      onClick={() => {
+                        onNavigateToSong?.(song);
+                      }}
+                    >
+                      <Music className="h-5 w-5 shrink-0 text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {song.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {song.artist || "Unknown artist"}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="default"
+                        className="text-[10px] px-1 py-0 shrink-0"
+                      >
+                        In your list
+                      </Badge>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {hasSearched && results.length === 0 && !error && localMatches.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">No matching files found</p>
+                </div>
+              )}
+
               {sortedResults.map(({ info, alreadyExists }) => (
                 <div
                   key={info.relativePath}

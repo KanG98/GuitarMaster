@@ -403,6 +403,11 @@ export function SongList({
         foldersReady={foldersReady}
         songs={sectionSongs}
         onMatchFound={setHighlightedSongId}
+        onNavigateToSong={(song) => {
+          setLookupOpen(false);
+          setHighlightedSongId(null);
+          onSelectSong(song);
+        }}
       />
     </>
   );
