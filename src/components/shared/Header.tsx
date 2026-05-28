@@ -49,7 +49,9 @@ const CURRENT_LABELS: Record<ToolName, string> = {
 export function Header({ currentTool, onToolChange }: HeaderProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [shrink, setShrink] = useState(0);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const ticking = useRef(false);
+  const lastY = useRef(0);
 
   useEffect(() => {
     const onScroll = () => {
@@ -57,6 +59,13 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
         requestAnimationFrame(() => {
           const y = window.scrollY;
           setShrink(Math.min(y / 80, 1));
+
+          if (y > lastY.current + 8) {
+            setHeaderVisible(false);
+          } else if (y < lastY.current - 4) {
+            setHeaderVisible(true);
+          }
+          lastY.current = y;
           ticking.current = false;
         });
         ticking.current = true;
@@ -69,55 +78,31 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
   return (
     <>
       {/* Top header bar */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 transition-all duration-150 ease-out"
-        style={{ height: 56 + (1 - shrink) * 12 + "px" }}>
-        <div className="container mx-auto flex h-full items-center gap-2 px-3 sm:px-4">
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-30 sm:sticky sm:top-0 transition-all duration-300 ease-out-expo"
+        style={{
+          height: 56 + (1 - shrink) * 24 + "px",
+          transform: headerVisible ? "translateY(0)" : "translateY(-100%)",
+        }}>
+        <div className="container mx-auto flex h-full items-end gap-2 px-3 sm:px-4 pb-1.5 sm:pb-0 sm:items-center">
           <button
             className="flex items-center gap-2 hover:opacity-80 active:scale-95 transition-all duration-200 shrink-0"
             onClick={() => onToolChange("songs")}
             data-testid="banner-home"
             style={{ gap: 8 + (1 - shrink) * 4 + "px" }}
           >
-            <Guitar className="shrink-0 transition-all duration-150 ease-out" style={{ height: 24 + (1 - shrink) * 6 + "px", width: 24 + (1 - shrink) * 6 + "px" }} />
+            <Guitar className="shrink-0 transition-all duration-150 ease-out sm:block hidden" style={{ height: 24 + (1 - shrink) * 6 + "px", width: 24 + (1 - shrink) * 6 + "px" }} />
             <h1 className="hidden sm:block font-bold tracking-tight transition-all duration-150 ease-out"
               style={{ fontSize: 18 + (1 - shrink) * 4 + "px" }}>
               GuitarMaster
             </h1>
           </button>
 
-          {/* Desktop: scrollable tab bar */}
-          <div className="flex-1 min-w-0 hidden sm:block" />
-          <nav className="hidden sm:flex items-center gap-0 overflow-x-auto scrollbar-none transition-all duration-150 ease-out"
-            style={{ opacity: 1 - shrink * 0.25 }}
-            data-testid="nav-bar">
-            {TOOLS_ALL.map((tool) => {
-              const isActive = currentTool === tool.id;
-              const Icon = tool.icon;
-              return (
-                <button
-                  key={tool.id}
-                  onClick={() => onToolChange(tool.id)}
-                  data-testid={`nav-${tool.id}`}
-                  className={`relative flex items-center gap-1 shrink-0 h-8 px-2 rounded-md text-sm
-                    transition-all duration-200 ease-out-expo active:scale-90
-                    ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"}`}
-                >
-                  <Icon className={`h-4 w-4 transition-transform duration-300 ease-out-expo ${isActive ? "scale-110" : ""}`} />
-                  <span>{tool.label}</span>
-                  <span
-                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full bg-primary transition-all duration-300 ease-out-expo
-                      ${isActive ? "w-8 opacity-100" : "w-0 opacity-0"}`}
-                  />
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Mobile: current tool label */}
-          <span className="sm:hidden flex-1 text-center font-medium text-muted-foreground truncate transition-all duration-150 ease-out"
+          {/* Mobile: large collapsing title */}
+          <span className="sm:hidden flex-1 font-bold transition-all duration-150 ease-out leading-none overflow-visible"
             style={{
-              fontSize: 14 + (1 - shrink) * 2 + "px",
-              opacity: 1 - shrink * 0.4,
+              fontSize: 24 + (1 - shrink) * 8 + "px",
+              transform: `translateY(${shrink * 4}px)`,
+              opacity: 0.65 + (1 - shrink) * 0.35,
             }}>
             {CURRENT_LABELS[currentTool]}
           </span>

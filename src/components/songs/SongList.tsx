@@ -191,7 +191,7 @@ export function SongList({
     <>
       <div className={`flex flex-wrap items-center justify-between gap-3 mb-6 sticky top-14 z-20 bg-background/95 backdrop-blur -mx-4 px-4 py-3 sm:relative sm:top-auto sm:z-auto sm:bg-transparent sm:backdrop-blur-none sm:mx-0 sm:px-0 sm:py-0 sm:translate-y-0 sm:opacity-100 transition-all duration-300 ease-out-expo ${toolbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}>
         <h2 className="text-2xl font-bold tracking-tight hidden sm:block">
-          {section === "practices" ? "Your Practices" : "Your Songs"}
+          {section === "practices" ? "Practices" : "Songs"}
         </h2>
 
         <div className="flex items-center gap-3">
@@ -344,7 +344,7 @@ export function SongList({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-[15vh] pb-[30vh]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:pt-0 sm:pb-0 pt-[15vh] pb-[30vh]">
           {filteredSongs.map((song) => (
             <SongCard
               key={song.id}
