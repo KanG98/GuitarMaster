@@ -23,6 +23,7 @@ interface SongLookupDialogProps {
     fileName: string,
     mimeType: string
   ) => Promise<void>;
+  foldersReady: boolean;
 }
 
 function parseNameAndArtist(
@@ -48,6 +49,7 @@ export function SongLookupDialog({
   open,
   onOpenChange,
   onAddSong,
+  foldersReady,
 }: SongLookupDialogProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SongFileInfo[]>([]);
@@ -136,7 +138,19 @@ export function SongLookupDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSearch} className="flex gap-2">
+        {!foldersReady && (
+          <div className="flex items-center gap-3 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <div>
+              <p className="font-medium">Song directory not found</p>
+              <p className="text-destructive/70 mt-0.5">The songs folder is missing. Add songs manually below while we fix this.</p>
+            </div>
+          </div>
+        )}
+
+        {foldersReady && (
+          <>
+          <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -221,6 +235,9 @@ export function SongLookupDialog({
             </div>
           )}
         </div>
+          </>
+        )}
+
       </DialogContent>
     </Dialog>
   );

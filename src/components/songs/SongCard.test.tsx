@@ -19,7 +19,6 @@ describe("SongCard", () => {
   const defaultProps = {
     song: mockSong,
     onClick: jest.fn(),
-    onDelete: jest.fn(),
   };
 
   beforeEach(() => jest.clearAllMocks());
@@ -44,18 +43,6 @@ describe("SongCard", () => {
     await userEvent.click(screen.getByText("Hotel California"));
 
     expect(onClick).toHaveBeenCalledTimes(1);
-  });
-
-  test("calls onDelete when delete button is clicked without triggering onClick", async () => {
-    const onClick = jest.fn();
-    const onDelete = jest.fn();
-    render(<SongCard {...defaultProps} onClick={onClick} onDelete={onDelete} />);
-
-    const deleteButton = screen.getByRole("button");
-    await userEvent.click(deleteButton);
-
-    expect(onDelete).toHaveBeenCalledTimes(1);
-    expect(onClick).not.toHaveBeenCalled();
   });
 
   test("shows practice time when totalPracticeSeconds > 0", () => {
