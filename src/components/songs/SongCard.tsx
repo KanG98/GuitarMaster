@@ -14,6 +14,7 @@ interface SongCardProps {
   deleteMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  highlighted?: boolean;
 }
 
 export function SongCard({
@@ -24,6 +25,7 @@ export function SongCard({
   deleteMode,
   isSelected,
   onToggleSelect,
+  highlighted,
 }: SongCardProps) {
   const hasThumb = !!song.youtubeVideoId;
 
@@ -39,7 +41,7 @@ export function SongCard({
     <Card
       className={`cursor-pointer transition-shadow duration-200 hover:shadow-md group relative overflow-hidden ${
         deleteMode && isSelected ? "ring-2 ring-destructive" : ""
-      }`}
+      } ${!deleteMode && highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
       onClick={handleClick}
     >
       {hasThumb && (

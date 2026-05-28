@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Search, Loader2, FileMusic, FolderOpen, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { SongFileInfo } from "@/lib/songDirectoryService";
+import { SongRecord } from "@/lib/fileService";
 
 interface SongLookupDialogProps {
   open: boolean;
@@ -23,6 +24,8 @@ interface SongLookupDialogProps {
     fileName: string,
     mimeType: string
   ) => Promise<void>;
+  songs?: SongRecord[];
+  onMatchFound?: (songId: string | null) => void;
 }
 
 function parseNameAndArtist(
@@ -48,6 +51,8 @@ export function SongLookupDialog({
   open,
   onOpenChange,
   onAddSong,
+  songs = [],
+  onMatchFound,
 }: SongLookupDialogProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SongFileInfo[]>([]);
@@ -55,6 +60,19 @@ export function SongLookupDialog({
   const [isAdding, setIsAdding] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed || !onMatchFound) {
+      onMatchFound?.(null);
+      return;
+    }
+    const match = songs.find((s) =>
+      s.name.toLowerCase().includes(trimmed) ||
+      s.artist.toLowerCase().includes(trimmed)
+    );
+    onMatchFound(match?.id ?? null);
+  }, [query, songs, onMatchFound]);
 
   const handleSearch = useCallback(
     async (e?: React.FormEvent) => {

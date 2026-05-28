@@ -19,7 +19,6 @@ describe("SongCard", () => {
   const defaultProps = {
     song: mockSong,
     onClick: jest.fn(),
-    onDelete: jest.fn(),
   };
 
   beforeEach(() => jest.clearAllMocks());
@@ -46,26 +45,14 @@ describe("SongCard", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  test("calls onDelete when delete button is clicked without triggering onClick", async () => {
-    const onClick = jest.fn();
-    const onDelete = jest.fn();
-    render(<SongCard {...defaultProps} onClick={onClick} onDelete={onDelete} />);
-
-    const deleteButton = screen.getByRole("button");
-    await userEvent.click(deleteButton);
-
-    expect(onDelete).toHaveBeenCalledTimes(1);
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
   test("shows practice time when totalPracticeSeconds > 0", () => {
-    const songWithTime = { ...mockSong, totalPracticeSeconds: 754 }; // 12m 34s
+    const songWithTime = { ...mockSong, totalPracticeSeconds: 754 };
     render(<SongCard {...defaultProps} song={songWithTime} />);
     expect(screen.getByText("12m practiced")).toBeInTheDocument();
   });
 
   test("shows hours and minutes for long practice time", () => {
-    const songWithTime = { ...mockSong, totalPracticeSeconds: 4980 }; // 1h 23m
+    const songWithTime = { ...mockSong, totalPracticeSeconds: 4980 };
     render(<SongCard {...defaultProps} song={songWithTime} />);
     expect(screen.getByText("1h 23m practiced")).toBeInTheDocument();
   });
@@ -79,5 +66,11 @@ describe("SongCard", () => {
   test("does not show practice time when totalPracticeSeconds is 0", () => {
     render(<SongCard {...defaultProps} />);
     expect(screen.queryByText(/practiced/)).not.toBeInTheDocument();
+  });
+
+  test("shows highlighted ring when highlighted prop is true", () => {
+    const { container } = render(<SongCard {...defaultProps} highlighted />);
+    const card = container.firstChild as HTMLElement;
+    expect(card.className).toContain("ring-primary");
   });
 });

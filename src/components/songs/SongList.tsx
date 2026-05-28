@@ -47,6 +47,7 @@ export function SongList({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [highlightedSongId, setHighlightedSongId] = useState<string | null>(null);
 
   const sectionSongs = useMemo(
     () => section === "practices" ? songs.filter((s) => s.practicing) : songs.filter((s) => !s.practicing),
@@ -232,12 +233,10 @@ export function SongList({
                   )}
                 </div>
               )}
-              {section === "songs" && (
-                <Button variant={foldersReady ? "outline" : "destructive"} onClick={() => setLookupOpen(true)}>
-                  <Search className="h-4 w-4 mr-1" />
-                  Look Up
-                </Button>
-              )}
+              <Button variant="outline" onClick={() => setLookupOpen(true)}>
+                <Search className="h-4 w-4 mr-1" />
+                Look Up
+              </Button>
               <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 {section === "practices" ? "Add Practice" : "Add Song"}
@@ -269,6 +268,7 @@ export function SongList({
               onToggleSelect={() => toggleSelect(song.id)}
               onTogglePractice={onTogglePractice ? () => onTogglePractice(song.id) : undefined}
               onTogglePin={onTogglePin ? () => onTogglePin(song.id) : undefined}
+              highlighted={song.id === highlightedSongId}
             />
           ))}
         </div>
@@ -282,8 +282,13 @@ export function SongList({
 
       <SongLookupDialog
         open={lookupOpen}
-        onOpenChange={setLookupOpen}
+        onOpenChange={(open) => {
+          setLookupOpen(open);
+          if (!open) setHighlightedSongId(null);
+        }}
         onAddSong={onLookupAddSong}
+        songs={sectionSongs}
+        onMatchFound={setHighlightedSongId}
       />
     </>
   );
