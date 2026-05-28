@@ -66,7 +66,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header currentTool={currentTool} onToolChange={setCurrentTool} />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+      <main className="flex-1 container mx-auto px-4 py-4 sm:py-8 max-w-5xl pb-20 sm:pb-8 pt-20 sm:pt-4">
         {currentTool === "songs" && (
           <>
             {selectedSong ? (

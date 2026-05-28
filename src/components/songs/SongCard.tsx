@@ -1,10 +1,12 @@
 "use client";
 
-import { Music, Trash2, User, Timer, ArrowRightLeft, Pin, Check } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { Music, User, Timer, ArrowRightLeft, Pin, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SongRecord } from "@/lib/fileService";
 import { formatPracticeTime } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface SongCardProps {
   song: SongRecord;
@@ -14,6 +16,7 @@ interface SongCardProps {
   deleteMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  index?: number;
   highlighted?: boolean;
 }
 
@@ -25,9 +28,52 @@ export function SongCard({
   deleteMode,
   isSelected,
   onToggleSelect,
+  index = -1,
   highlighted,
 }: SongCardProps) {
   const hasThumb = !!song.youtubeVideoId;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const isMobile = useIsMobile(1024);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    let ticking = false;
+    const checkFocus = () => {
+      const rect = el.getBoundingClientRect();
+      const center = rect.top + rect.height / 2;
+      const vh = window.innerHeight;
+      const distance = Math.abs(center - vh / 2);
+      const scrollY = window.scrollY;
+
+      if (index === 0 && scrollY < vh * 0.01) {
+        setIsFocused(true);
+      } else if (index === 1 && scrollY >= vh * 0.01 && scrollY < vh * 0.08) {
+        setIsFocused(true);
+      } else if (scrollY < vh * 0.08) {
+        setIsFocused(false);
+      } else {
+        setIsFocused(distance < vh * 0.08);
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          checkFocus();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    checkFocus();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isMobile, index]);
 
   const handleClick = () => {
     if (deleteMode && onToggleSelect) {
@@ -39,6 +85,8 @@ export function SongCard({
 
   return (
     <Card
+      ref={cardRef}
+      data-expanded={isFocused || undefined}
       className={`cursor-pointer transition-shadow duration-200 hover:shadow-md group relative overflow-hidden ${
         deleteMode && isSelected ? "ring-2 ring-destructive" : ""
       } ${!deleteMode && highlighted ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
@@ -51,11 +99,14 @@ export function SongCard({
             alt={song.name}
             className="absolute left-8 top-[44px] w-16 h-16 rounded-lg object-cover
               group-hover:left-0 group-hover:top-0 group-hover:w-full group-hover:h-full group-hover:rounded-xl
+              group-data-[expanded=true]:left-0 group-data-[expanded=true]:top-0 group-data-[expanded=true]:w-full group-data-[expanded=true]:h-full group-data-[expanded=true]:rounded-xl
               transition-all duration-[600ms] ease-out-expo
               will-change-[left,top,width,height,transform]"
           />
           <div className="absolute inset-0 rounded-xl bg-[linear-gradient(to_right,transparent,oklch(1_0_0/10%)_80%,oklch(1_0_0/60%)_92%,oklch(1_0_0/95%))]
-            opacity-0 group-hover:opacity-100
+            opacity-0
+            group-hover:opacity-100
+            group-data-[expanded=true]:opacity-100
             transition-opacity duration-[600ms] ease-out-expo pointer-events-none" />
         </>
       )}
@@ -82,7 +133,10 @@ export function SongCard({
                 <Music className="h-5 w-5 text-primary" />
               </div>
             )}
-            <div className="min-w-0 group-hover:translate-x-4 group-hover:opacity-0 transition-all duration-[600ms] ease-out-expo">
+            <div className="min-w-0
+              group-hover:translate-x-4 group-hover:opacity-0
+              group-data-[expanded=true]:translate-x-4 group-data-[expanded=true]:opacity-0
+              transition-all duration-[600ms] ease-out-expo">
               <p
                 className="font-semibold truncate transition-colors duration-[600ms]"
                 title={song.name}
@@ -103,15 +157,18 @@ export function SongCard({
               )}
             </div>
           </div>
-          <div className="flex flex-col items-center gap-0.5 shrink-0 group-hover:translate-x-4 transition-transform duration-[600ms] ease-out-expo">
+          <div className="flex flex-col items-center gap-0.5 shrink-0
+            group-hover:translate-x-4
+            group-data-[expanded=true]:translate-x-4
+            transition-transform duration-[600ms] ease-out-expo">
             {onTogglePin && (
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                className={`h-8 w-8 p-0 transition-opacity ${
                   song.pinned
                     ? "text-primary opacity-100"
-                    : "text-muted-foreground hover:text-primary"
+                    : "text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 group-data-[expanded=true]:opacity-100"
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -126,7 +183,9 @@ export function SongCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary
+                  opacity-0 group-hover:opacity-100 group-data-[expanded=true]:opacity-100
+                  transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
                   onTogglePractice();

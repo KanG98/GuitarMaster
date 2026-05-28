@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Hand } from "lucide-react";
+import { Play, Pause, Hand, Minus, Plus } from "lucide-react";
 import {
   TimeSignature,
   beatsPerMeasure,
@@ -25,6 +25,9 @@ export function Metronome() {
   const [playing, setPlaying] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [volume, setVolume] = useState(0.7);
+  const [editingBpm, setEditingBpm] = useState(false);
+  const [bpmInput, setBpmInput] = useState(String(DEFAULT_BPM));
+  const bpmInputRef = useRef<HTMLInputElement>(null);
   const tapsRef = useRef<number[]>([]);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -81,24 +84,38 @@ export function Metronome() {
     [playing, bpm, volume]
   );
 
-  // Keyboard: space to toggle
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.code === "Space" && e.target === document.body) {
-        e.preventDefault();
-        handleToggle();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [handleToggle]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopMetronome();
     };
   }, []);
+
+  const startBpmEdit = () => {
+    setBpmInput(String(bpm));
+    setEditingBpm(true);
+    setTimeout(() => bpmInputRef.current?.select(), 50);
+  };
+
+  const confirmBpmEdit = () => {
+    const parsed = parseInt(bpmInput, 10);
+    if (!isNaN(parsed)) {
+      changeBpm(parsed);
+    }
+    setEditingBpm(false);
+  };
+
+  const cancelBpmEdit = () => {
+    setEditingBpm(false);
+  };
+
+  const handleBpmKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      confirmBpmEdit();
+    } else if (e.key === "Escape") {
+      cancelBpmEdit();
+    }
+  };
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
@@ -129,12 +146,33 @@ export function Metronome() {
           data-testid="bpm-decrease"
           onClick={() => changeBpm(bpm - 1)}
         >
-          −
+          <Minus className="h-4 w-4" />
         </Button>
         <div className="text-center min-w-[100px]">
-          <span data-testid="bpm-display" className="text-5xl font-bold tabular-nums">
-            {bpm}
-          </span>
+          {editingBpm ? (
+            <input
+              ref={bpmInputRef}
+              type="number"
+              inputMode="numeric"
+              value={bpmInput}
+              onChange={(e) => setBpmInput(e.target.value)}
+              onBlur={confirmBpmEdit}
+              onKeyDown={handleBpmKeyDown}
+              className="text-5xl font-bold tabular-nums w-full text-center bg-transparent border-b-2 border-primary outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              min={MIN_BPM}
+              max={MAX_BPM}
+              data-testid="bpm-input"
+              autoFocus
+            />
+          ) : (
+            <button
+              onClick={startBpmEdit}
+              className="text-5xl font-bold tabular-nums hover:text-primary transition-colors cursor-text"
+              data-testid="bpm-display"
+            >
+              {bpm}
+            </button>
+          )}
           <p className="text-sm text-muted-foreground mt-1">BPM</p>
         </div>
         <Button
@@ -143,7 +181,7 @@ export function Metronome() {
           data-testid="bpm-increase"
           onClick={() => changeBpm(bpm + 1)}
         >
-          +
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
 
@@ -214,7 +252,6 @@ export function Metronome() {
         />
       </div>
 
-      <p className="text-xs text-muted-foreground">Press Space to start/stop</p>
     </div>
   );
 }

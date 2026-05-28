@@ -56,9 +56,9 @@ export function calcTapTempo(taps: number[]): number | null {
 const LOOKAHEAD_MS = 25; // how often the scheduler runs
 const SCHEDULE_AHEAD_S = 0.1; // how far ahead to schedule
 
-const CLICK_FREQ_ACCENT = 1000;
-const CLICK_FREQ_NORMAL = 800;
-const CLICK_DURATION = 0.03;
+const CLICK_FREQ_ACCENT = 6000;
+const CLICK_FREQ_NORMAL = 4500;
+const CLICK_DURATION = 0.025;
 
 let audioCtx: AudioContext | null = null;
 let gainNode: GainNode | null = null;
@@ -86,17 +86,33 @@ function ensureContext() {
 
 function scheduleClick(time: number, isAccent: boolean) {
   const ctx = audioCtx!;
-  const osc = ctx.createOscillator();
-  const env = ctx.createGain();
+  const vol = _config.volume;
+  const freq = isAccent ? CLICK_FREQ_ACCENT : CLICK_FREQ_NORMAL;
 
-  osc.frequency.value = isAccent ? CLICK_FREQ_ACCENT : CLICK_FREQ_NORMAL;
-  env.gain.setValueAtTime(_config.volume, time);
-  env.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
+  // Sharp high-frequency tick
+  const oscTick = ctx.createOscillator();
+  const envTick = ctx.createGain();
+  oscTick.type = "sine";
+  oscTick.frequency.value = freq;
+  envTick.gain.setValueAtTime(vol * 0.9, time);
+  envTick.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION);
+  oscTick.connect(envTick);
+  envTick.connect(gainNode!);
+  oscTick.start(time);
+  oscTick.stop(time + CLICK_DURATION);
 
-  osc.connect(env);
-  env.connect(gainNode!);
-  osc.start(time);
-  osc.stop(time + CLICK_DURATION);
+  // Body resonance for warmth
+  const oscBody = ctx.createOscillator();
+  const envBody = ctx.createGain();
+  oscBody.type = "triangle";
+  oscBody.frequency.setValueAtTime(freq * 0.35, time);
+  oscBody.frequency.exponentialRampToValueAtTime(freq * 0.15, time + CLICK_DURATION);
+  envBody.gain.setValueAtTime(vol * 0.25, time);
+  envBody.gain.exponentialRampToValueAtTime(0.001, time + CLICK_DURATION * 1.5);
+  oscBody.connect(envBody);
+  envBody.connect(gainNode!);
+  oscBody.start(time);
+  oscBody.stop(time + CLICK_DURATION * 1.5);
 }
 
 function scheduler() {
