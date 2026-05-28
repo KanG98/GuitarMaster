@@ -16,6 +16,7 @@ interface SongCardProps {
   deleteMode?: boolean;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  index?: number;
 }
 
 export function SongCard({
@@ -26,6 +27,7 @@ export function SongCard({
   deleteMode,
   isSelected,
   onToggleSelect,
+  index = -1,
 }: SongCardProps) {
   const hasThumb = !!song.youtubeVideoId;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -36,13 +38,40 @@ export function SongCard({
     if (!isMobile) return;
     const el = cardRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsFocused(entry.isIntersecting),
-      { rootMargin: "-49.5% 0px -49.5% 0px", threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isMobile]);
+
+    let ticking = false;
+    const checkFocus = () => {
+      const rect = el.getBoundingClientRect();
+      const center = rect.top + rect.height / 2;
+      const vh = window.innerHeight;
+      const distance = Math.abs(center - vh / 2);
+      const scrollY = window.scrollY;
+
+      if (index === 0 && scrollY < vh * 0.01) {
+        setIsFocused(true);
+      } else if (index === 1 && scrollY >= vh * 0.01 && scrollY < vh * 0.08) {
+        setIsFocused(true);
+      } else if (scrollY < vh * 0.08) {
+        setIsFocused(false);
+      } else {
+        setIsFocused(distance < vh * 0.08);
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          checkFocus();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    checkFocus();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isMobile, index]);
 
   const handleClick = () => {
     if (deleteMode && onToggleSelect) {

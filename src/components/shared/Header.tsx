@@ -100,12 +100,15 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
           {/* Mobile: large collapsing title */}
           <span className="sm:hidden flex-1 font-bold transition-all duration-150 ease-out leading-none overflow-visible"
             style={{
-              fontSize: 24 + (1 - shrink) * 8 + "px",
-              transform: `translateY(${shrink * 4}px)`,
+              fontSize: 32 + (1 - shrink) * 12 + "px",
+              transform: `translateY(${shrink * 5}px)`,
               opacity: 0.65 + (1 - shrink) * 0.35,
             }}>
             {CURRENT_LABELS[currentTool]}
           </span>
+
+          {/* Mobile: actions portal target */}
+          <div id="header-actions" className="sm:hidden flex items-center gap-1 shrink-0" />
 
           <div className="shrink-0">
             <ThemePicker className="hidden sm:inline-flex" />

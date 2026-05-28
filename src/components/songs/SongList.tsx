@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Plus, Music, Search, X, Filter, ListChecks, CheckCheck } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Music, Search, X, Filter, ListChecks, CheckCheck, Ellipsis, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SongCard } from "./SongCard";
 import { AddSongDialog } from "./AddSongDialog";
@@ -179,6 +180,93 @@ export function SongList({
       .catch(() => setFoldersReady(false));
   }, []);
 
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => { setPortalReady(true); }, []);
+  const [actionsExpanded, setActionsExpanded] = useState(false);
+  const actionsDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!actionsExpanded) return;
+    const handler = (e: MouseEvent) => {
+      if (actionsDropdownRef.current && !actionsDropdownRef.current.contains(e.target as Node)) {
+        setActionsExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [actionsExpanded]);
+
+  const pillBarPortal = portalReady && typeof document !== "undefined"
+    ? document.getElementById("header-actions") : null;
+
+  const desktopPillBar = (
+    <div className="flex items-center gap-0 p-0.5 rounded-xl bg-muted/50 border border-border/60 shadow-sm">
+      {section === "songs" && (
+        <>
+          <PillButton icon={Search} label="Look Up" onClick={() => setLookupOpen(true)}
+            destructive={!foldersReady} className={foldersReady ? "" : "animate-pulse"} />
+          <Divider />
+        </>
+      )}
+
+      <PillButton icon={Link} label="Custom Link" onClick={() => setDialogOpen(true)} />
+
+      {artists.length > 0 && (
+        <>
+          <Divider />
+          <div className="relative" ref={filterRef} data-testid="artist-filter">
+            <button
+              onClick={() => { setFilterOpen(!filterOpen); setFilterSearch(""); }}
+              className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-sm font-medium
+                active:scale-95 transition-all duration-200 ease-out-expo
+                ${artistFilter ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-background/80"}`}
+              data-testid="filter-toggle"
+            >
+              <Filter className={`h-4 w-4 shrink-0 transition-transform duration-300 ${filterOpen ? "rotate-180" : ""}`} />
+              <span className="hidden sm:inline max-w-[80px] truncate">{artistFilter || "Artist"}</span>
+              {artistFilter && (
+                <span role="button" tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); setArtistFilter(null); setFilterOpen(false); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setArtistFilter(null); setFilterOpen(false); }}}
+                  className="ml-0.5 p-0.5 rounded-full hover:bg-muted-foreground/20 active:scale-75 transition-all duration-200"
+                  data-testid="filter-clear"><X className="h-3 w-3" /></span>
+              )}
+            </button>
+            {filterOpen && (
+              <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border bg-popover shadow-lg
+                origin-top-right animate-in fade-in zoom-in-95 duration-200" data-testid="filter-dropdown">
+                <div className="flex items-center gap-2 px-3 py-2.5 border-b">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input ref={searchInputRef} type="text" value={filterSearch}
+                    onChange={(e) => setFilterSearch(e.target.value)} placeholder="Filter artists..."
+                    className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                    data-testid="filter-search" />
+                </div>
+                <div className="max-h-52 overflow-y-auto py-1">
+                  <button onClick={() => { setArtistFilter(null); setFilterOpen(false); setFilterSearch(""); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors ${artistFilter === null ? "font-semibold text-primary bg-primary/5" : ""}`}>
+                    All artists<span className="text-muted-foreground ml-1.5 text-xs">({sectionSongs.length})</span>
+                  </button>
+                  {filteredArtists.map(([name, count]) => (
+                    <button key={name} onClick={() => { setArtistFilter(name); setFilterOpen(false); setFilterSearch(""); }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors flex justify-between items-center ${artistFilter === name ? "font-semibold text-primary bg-primary/5" : ""}`}>
+                      <span className="truncate">{name}</span>
+                      <span className="text-xs text-muted-foreground ml-2 shrink-0 tabular-nums">{count}</span>
+                    </button>
+                  ))}
+                  {filteredArtists.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">No artists found</p>}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      <Divider />
+      <PillButton icon={ListChecks} label="Select" onClick={() => setSelectMode(true)} />
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -189,7 +277,7 @@ export function SongList({
 
   return (
     <>
-      <div className={`flex flex-wrap items-center justify-between gap-3 mb-6 sticky top-14 z-20 bg-background/95 backdrop-blur -mx-4 px-4 py-3 sm:relative sm:top-auto sm:z-auto sm:bg-transparent sm:backdrop-blur-none sm:mx-0 sm:px-0 sm:py-0 sm:translate-y-0 sm:opacity-100 transition-all duration-300 ease-out-expo ${toolbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-3 mb-6 sticky top-14 z-20 bg-background/95 backdrop-blur -mx-4 px-4 py-3 sm:relative sm:top-auto sm:z-auto sm:bg-transparent sm:backdrop-blur-none sm:mx-0 sm:px-0 sm:py-0 sm:translate-y-0 sm:opacity-100 transition-all duration-300 ease-out-expo ${toolbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"} ${pillBarPortal && !selectMode ? "hidden sm:flex" : ""}`}>
         <h2 className="text-2xl font-bold tracking-tight hidden sm:block">
           {section === "practices" ? "Practices" : "Songs"}
         </h2>
@@ -220,115 +308,51 @@ export function SongList({
                 <span className="hidden sm:inline">Delete</span> ({selectedIds.size})
               </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-0 p-0.5 rounded-xl bg-muted/50 border border-border/60 shadow-sm">
-              <PillButton
-                icon={ListChecks}
-                label="Select"
-                onClick={() => setSelectMode(true)}
-              />
-              <Divider />
+          ) : pillBarPortal ? (
+            createPortal(
+              <div className="flex items-center gap-0" ref={actionsDropdownRef}>
+                <div className="flex items-center gap-0 p-0.5 rounded-xl bg-muted/50 border border-border/60 shadow-sm">
+                  <PillButton icon={Search} label="Search" onClick={() => setLookupOpen(true)} destructive={!foldersReady} />
+                  <button
+                    onClick={() => setActionsExpanded(!actionsExpanded)}
+                    className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-sm font-medium active:scale-95 transition-all duration-200 ease-out-expo
+                      ${actionsExpanded ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-background/80"}`}
+                  >
+                    <Ellipsis className="h-4 w-4 shrink-0" />
+                  </button>
+                </div>
 
-              {artists.length > 0 && (
-                <>
-                  <div className="relative" ref={filterRef} data-testid="artist-filter">
-                    <button
-                      onClick={() => { setFilterOpen(!filterOpen); setFilterSearch(""); }}
-                      className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-sm font-medium
-                        active:scale-95 transition-all duration-200 ease-out-expo
-                        ${artistFilter
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-background/80"
-                        }`}
-                      data-testid="filter-toggle"
-                    >
-                      <Filter className={`h-4 w-4 shrink-0 transition-transform duration-300 ${filterOpen ? "rotate-180" : ""}`} />
-                      <span className="hidden sm:inline max-w-[80px] truncate">
-                        {artistFilter || "Artist"}
-                      </span>
-                      {artistFilter && (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => { e.stopPropagation(); setArtistFilter(null); setFilterOpen(false); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setArtistFilter(null); setFilterOpen(false); }}}
-                          className="ml-0.5 p-0.5 rounded-full hover:bg-muted-foreground/20 active:scale-75 transition-all duration-200"
-                          data-testid="filter-clear"
-                        >
-                          <X className="h-3 w-3" />
-                        </span>
-                      )}
+                {actionsExpanded && (
+                  <div className="absolute top-full right-0 mt-2 w-48 rounded-xl border bg-popover shadow-lg origin-top-right animate-in fade-in zoom-in-95 duration-200 z-50 py-1">
+                    <button onClick={() => { setLookupOpen(true); setActionsExpanded(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors">
+                      <Search className="h-4 w-4 text-muted-foreground" />
+                      Look Up
                     </button>
-
-                    {filterOpen && (
-                      <div
-                        className="absolute right-0 z-10 mt-2 w-56 rounded-xl border bg-popover shadow-lg
-                          origin-top-right animate-in fade-in zoom-in-95 duration-200"
-                        data-testid="filter-dropdown"
-                      >
-                        <div className="flex items-center gap-2 px-3 py-2.5 border-b">
-                          <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <input
-                            ref={searchInputRef}
-                            type="text"
-                            value={filterSearch}
-                            onChange={(e) => setFilterSearch(e.target.value)}
-                            placeholder="Filter artists..."
-                            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-                            data-testid="filter-search"
-                          />
-                        </div>
-                        <div className="max-h-52 overflow-y-auto py-1">
-                          <button
-                            onClick={() => { setArtistFilter(null); setFilterOpen(false); setFilterSearch(""); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors ${
-                              artistFilter === null ? "font-semibold text-primary bg-primary/5" : ""
-                            }`}
-                          >
-                            All artists
-                            <span className="text-muted-foreground ml-1.5 text-xs">({sectionSongs.length})</span>
-                          </button>
-                          {filteredArtists.map(([name, count]) => (
-                            <button
-                              key={name}
-                              onClick={() => { setArtistFilter(name); setFilterOpen(false); setFilterSearch(""); }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors flex justify-between items-center ${
-                                artistFilter === name ? "font-semibold text-primary bg-primary/5" : ""
-                              }`}
-                            >
-                              <span className="truncate">{name}</span>
-                              <span className="text-xs text-muted-foreground ml-2 shrink-0 tabular-nums">{count}</span>
-                            </button>
-                          ))}
-                          {filteredArtists.length === 0 && (
-                            <p className="px-3 py-4 text-sm text-muted-foreground text-center">No artists found</p>
-                          )}
-                        </div>
-                      </div>
+                    <button onClick={() => { setDialogOpen(true); setActionsExpanded(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors">
+                      <Link className="h-4 w-4 text-muted-foreground" />
+                      Custom Link
+                    </button>
+                    {artists.length > 0 && (
+                      <button onClick={() => { setFilterOpen(!filterOpen); setActionsExpanded(false); }}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors ${artistFilter ? "text-primary" : ""}`}>
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        {artistFilter ? `Artist: ${artistFilter}` : "Filter by Artist"}
+                      </button>
                     )}
+                    <button onClick={() => { setSelectMode(true); setActionsExpanded(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors">
+                      <ListChecks className="h-4 w-4 text-muted-foreground" />
+                      Select Songs
+                    </button>
                   </div>
-                  <Divider />
-                </>
-              )}
-
-              {section === "songs" && (
-                <PillButton
-                  icon={Search}
-                  label="Look Up"
-                  onClick={() => setLookupOpen(true)}
-                  destructive={!foldersReady}
-                  className={foldersReady ? "" : "animate-pulse"}
-                />
-              )}
-
-              <Divider />
-
-              <PillButton
-                icon={Plus}
-                label={section === "practices" ? "Practice" : "Add Song"}
-                onClick={() => setDialogOpen(true)}
-              />
-            </div>
+                )}
+              </div>,
+              pillBarPortal
+            )
+          ) : (
+            desktopPillBar
           )}
         </div>
       </div>
@@ -345,7 +369,7 @@ export function SongList({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:pt-0 sm:pb-0 pt-[15vh] pb-[30vh]">
-          {filteredSongs.map((song) => (
+          {filteredSongs.map((song, i) => (
             <SongCard
               key={song.id}
               song={song}
@@ -355,6 +379,7 @@ export function SongList({
               onToggleSelect={() => toggleSelect(song.id)}
               onTogglePractice={onTogglePractice ? () => onTogglePractice(song.id) : undefined}
               onTogglePin={onTogglePin ? () => onTogglePin(song.id) : undefined}
+              index={i}
             />
           ))}
         </div>
