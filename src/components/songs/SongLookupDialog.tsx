@@ -268,6 +268,12 @@ export function SongLookupDialog({
                 </div>
               )}
 
+              {sortedResults.length > 0 && (
+                <p className="text-xs font-medium text-muted-foreground px-2 pt-2 pb-0.5">
+                  Search results
+                </p>
+              )}
+
               {sortedResults.map(({ info, alreadyExists }) => (
                 <div
                   key={info.relativePath}
