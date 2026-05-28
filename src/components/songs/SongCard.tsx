@@ -43,6 +43,7 @@ export function SongCard({
 
     let ticking = false;
     const checkFocus = () => {
+      if (highlighted) return;
       const rect = el.getBoundingClientRect();
       const center = rect.top + rect.height / 2;
       const vh = window.innerHeight;
@@ -73,7 +74,14 @@ export function SongCard({
     checkFocus();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isMobile, index]);
+  }, [isMobile, index, highlighted]);
+
+  useEffect(() => {
+    if (highlighted) {
+      setIsFocused(true);
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlighted]);
 
   const handleClick = () => {
     if (deleteMode && onToggleSelect) {
