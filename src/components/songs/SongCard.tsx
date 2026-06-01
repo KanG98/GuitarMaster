@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SongRecord } from "@/lib/fileService";
 import { formatPracticeTime } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface SongCardProps {
   song: SongRecord;
@@ -34,10 +33,8 @@ export function SongCard({
   const hasThumb = !!song.youtubeVideoId;
   const cardRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const isMobile = useIsMobile(1024);
 
   useEffect(() => {
-    if (!isMobile) return;
     const el = cardRef.current;
     if (!el) return;
 
@@ -74,7 +71,7 @@ export function SongCard({
     checkFocus();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isMobile, index, highlighted]);
+  }, [index, highlighted]);
 
   useEffect(() => {
     if (highlighted) {

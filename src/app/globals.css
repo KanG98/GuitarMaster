@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --breakpoint-sm: 64rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 96rem;
+}
+
 @theme inline {
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --color-background: var(--background);

@@ -245,7 +245,7 @@ export function SongDetail({ song, onBack, onDeleteSong, onSongUpdate }: SongDet
             <FileGallery
               files={files}
               isLoading={isLoading}
-              onView={(_file, index) => setViewIndex(window.innerWidth < 640 ? index : index - (index % 2))}
+              onView={(_file, index) => setViewIndex(window.innerWidth < 1024 ? index : index - (index % 2))}
               onDelete={handleDeleteFile}
               onReorder={handleReorder}
               uploadSlot={files.length > 0 && (
@@ -302,7 +302,7 @@ export function SongDetail({ song, onBack, onDeleteSong, onSongUpdate }: SongDet
           <FileGallery
             files={files}
             isLoading={isLoading}
-            onView={(_file, index) => setViewIndex(window.innerWidth < 640 ? index : index - (index % 2))}
+            onView={(_file, index) => setViewIndex(window.innerWidth < 1024 ? index : index - (index % 2))}
             onDelete={handleDeleteFile}
             onReorder={handleReorder}
             uploadSlot={files.length > 0 && (
