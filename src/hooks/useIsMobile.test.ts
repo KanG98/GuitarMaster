@@ -15,7 +15,7 @@ describe("useIsMobile", () => {
   });
 
   it("should return false when screen is wider than breakpoint", () => {
-    window.innerWidth = 800;
+    window.innerWidth = 1200;
     const { result } = renderHook(() => useIsMobile());
     
     expect(result.current).toBe(false);

@@ -362,7 +362,7 @@ export function SongList({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:pt-0 sm:pb-0 pt-[15vh] pb-[30vh]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:pt-0 sm:pb-0 pt-[15vh] pb-[30vh]">
           {filteredSongs.map((song, i) => (
             <SongCard
               key={song.id}
