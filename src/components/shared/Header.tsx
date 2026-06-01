@@ -83,7 +83,7 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
           height: 56 + (1 - shrink) * 24 + "px",
           transform: headerVisible ? "translateY(0)" : "translateY(-100%)",
         }}>
-        <div className="container mx-auto flex h-full items-end gap-2 px-3 sm:px-4 pb-1.5 sm:pb-0 sm:items-center">
+        <div className="container mx-auto flex h-full items-end gap-2 px-3 sm:px-4 pb-1.5 sm:pb-0 sm:items-center sm:justify-between">
           <button
             className="flex items-center gap-2 hover:opacity-80 active:scale-95 transition-all duration-200 shrink-0"
             onClick={() => onToolChange("songs")}
@@ -96,28 +96,6 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
               GuitarMaster
             </h1>
           </button>
-
-          {/* Desktop: tool navigation */}
-          <nav className="hidden sm:flex items-center gap-0.5 ml-2">
-            {TOOLS_ALL.map((tool) => {
-              const isActive = currentTool === tool.id;
-              const Icon = tool.icon;
-              return (
-                <button
-                  key={tool.id}
-                  onClick={() => onToolChange(tool.id)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out-expo active:scale-95
-                    ${isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tool.label}
-                </button>
-              );
-            })}
-          </nav>
 
           {/* Mobile: large collapsing title */}
           <span className="sm:hidden flex-1 font-bold transition-all duration-150 ease-out leading-none overflow-visible"
@@ -132,8 +110,29 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
           {/* Mobile: actions portal target */}
           <div id="header-actions" className="sm:hidden flex items-center gap-1 shrink-0" />
 
-          <div className="shrink-0">
-            <ThemePicker className="hidden sm:inline-flex" />
+          {/* Desktop: right side - nav tabs + theme picker */}
+          <div className="hidden sm:flex items-center gap-2">
+            <nav className="flex items-center gap-0.5">
+              {TOOLS_ALL.map((tool) => {
+                const isActive = currentTool === tool.id;
+                const Icon = tool.icon;
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => onToolChange(tool.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out-expo active:scale-95
+                      ${isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tool.label}
+                  </button>
+                );
+              })}
+            </nav>
+            <ThemePicker className="inline-flex" />
           </div>
         </div>
       </header>
