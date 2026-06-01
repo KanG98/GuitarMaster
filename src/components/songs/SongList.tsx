@@ -198,17 +198,14 @@ export function SongList({
   }, [actionsExpanded]);
 
   const pillBarPortal = portalReady && typeof document !== "undefined"
-    ? document.getElementById("header-actions") : null;
+    ? (window.matchMedia("(max-width: 639px)").matches ? document.getElementById("header-actions") : null)
+    : null;
 
   const desktopPillBar = (
     <div className="flex items-center gap-0 p-0.5 rounded-xl bg-muted/50 border border-border/60 shadow-sm">
-      {section === "songs" && (
-        <>
-          <PillButton icon={Search} label="Look Up" onClick={() => setLookupOpen(true)}
-            destructive={!foldersReady} className={foldersReady ? "" : "animate-pulse"} />
-          <Divider />
-        </>
-      )}
+      <PillButton icon={Search} label="Look Up" onClick={() => setLookupOpen(true)}
+        destructive={!foldersReady} className={foldersReady ? "" : "animate-pulse"} />
+      <Divider />
 
       <PillButton icon={Link} label="Custom Link" onClick={() => setDialogOpen(true)} />
 
@@ -267,14 +264,6 @@ export function SongList({
       <PillButton icon={ListChecks} label="Select" onClick={() => setSelectMode(true)} />
     </div>
   );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 rounded-full border-4 border-muted border-t-primary animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -358,7 +347,11 @@ export function SongList({
         </div>
       </div>
 
-      {sectionSongs.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 rounded-full border-4 border-muted border-t-primary animate-spin" />
+        </div>
+      ) : sectionSongs.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Music className="h-12 w-12 mx-auto mb-3 opacity-40" />
           <p>{section === "practices" ? "No songs in practice list" : "No songs yet"}</p>
