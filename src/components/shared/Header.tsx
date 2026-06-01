@@ -97,6 +97,28 @@ export function Header({ currentTool, onToolChange }: HeaderProps) {
             </h1>
           </button>
 
+          {/* Desktop: tool navigation */}
+          <nav className="hidden sm:flex items-center gap-0.5 ml-2">
+            {TOOLS_ALL.map((tool) => {
+              const isActive = currentTool === tool.id;
+              const Icon = tool.icon;
+              return (
+                <button
+                  key={tool.id}
+                  onClick={() => onToolChange(tool.id)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out-expo active:scale-95
+                    ${isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tool.label}
+                </button>
+              );
+            })}
+          </nav>
+
           {/* Mobile: large collapsing title */}
           <span className="sm:hidden flex-1 font-bold transition-all duration-150 ease-out leading-none overflow-visible"
             style={{

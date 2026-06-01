@@ -208,14 +208,7 @@ export function SongLookupDialog({
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {
-                        parseNameAndArtist(info.relativePath, info.fileName)
-                          .artist
-                      }
-                      {parseNameAndArtist(info.relativePath, info.fileName)
-                        .artist &&
-                        " / "}
-                      {info.relativePath}
+                      {parseNameAndArtist(info.relativePath, info.fileName).artist}
                     </p>
                   </div>
                   <Button
