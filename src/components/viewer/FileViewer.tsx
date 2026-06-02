@@ -36,7 +36,7 @@ function FileContent({ file }: { file: FileRecord }) {
 
 export function FileViewer({ files, currentIndex, onNavigate, onClose }: FileViewerProps) {
   const isMobile = useIsMobile();
-  const step = isMobile ? 1 : 2;
+  const step = 1;
 
   const leftFile = files[currentIndex];
   const rightFile = !isMobile && currentIndex + 1 < files.length ? files[currentIndex + 1] : null;

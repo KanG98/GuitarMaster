@@ -44,7 +44,7 @@ export function FileGallery({
 
   if (files.length === 0) {
     return uploadSlot ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {uploadSlot}
       </div>
     ) : null;
@@ -98,7 +98,7 @@ export function FileGallery({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-3">
       {files.map((file, index) => (
         <Card
           key={file.id}
