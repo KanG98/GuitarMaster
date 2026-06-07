@@ -13,7 +13,7 @@ describe("AddSongDialog", () => {
 
   test("renders dialog with title and fields when open", () => {
     render(<AddSongDialog {...defaultProps} />);
-    expect(screen.getByText("Add New Song")).toBeInTheDocument();
+    expect(screen.getByText("New Song")).toBeInTheDocument();
     expect(screen.getByLabelText("Song Name *")).toBeInTheDocument();
     expect(screen.getByLabelText("Artist")).toBeInTheDocument();
   });

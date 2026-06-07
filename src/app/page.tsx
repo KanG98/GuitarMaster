@@ -32,18 +32,24 @@ export default function Home() {
     ) => {
       const record = await createSong(name, artist);
 
-      const res = await fetch(
-        `/api/songs/file?path=${encodeURIComponent(serverFilePath)}`
-      );
-      if (!res.ok) {
-        throw new Error("Failed to fetch song file");
+      try {
+        const res = await fetch(
+          `/api/songs/file?path=${encodeURIComponent(serverFilePath)}`
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch song file");
+        }
+        const blob = await res.blob();
+        const file = new File([blob], fileName, { type: mimeType });
+        await uploadFile(record.id, file);
+      } catch (err) {
+        await removeSong(record.id);
+        throw err;
       }
-      const blob = await res.blob();
-      const file = new File([blob], fileName, { type: mimeType });
-      await uploadFile(record.id, file);
+
       await refresh();
     },
-    [refresh]
+    [refresh, removeSong]
   );
 
   const handleDeleteSong = async (song: SongRecord) => {

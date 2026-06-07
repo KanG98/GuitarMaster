@@ -93,8 +93,8 @@ export function SongLookupDialog({
         const { name, artist } = parseNameAndArtist(info.relativePath, info.fileName);
         const existing = songs.find(
           (s) =>
-            s.name.toLowerCase() === name.toLowerCase() ||
-            (artist && s.artist.toLowerCase() === artist.toLowerCase())
+            s.name.toLowerCase() === name.toLowerCase() &&
+            (!artist || s.artist.toLowerCase() === artist.toLowerCase())
         );
         return { info, alreadyExists: !!existing };
       })
